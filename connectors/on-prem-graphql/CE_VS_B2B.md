@@ -107,30 +107,53 @@ The extraction script supports both (`--admin` flag).
 
 ## This Extraction Script
 
-`extract_ce.py` does one thing: pull all available CE data and save it as JSON.
+`extract_ce.py` authenticates against a real CE instance, fetches customer identities, then wraps them in a synthetic B2B structure that models a large-scale enterprise. This lets us stress-test the full connector pipeline end-to-end without Adobe Commerce.
 
-**What it does:**
-1. Authenticates (customer or admin token)
-2. Runs 6 queries: store config, products, categories, CMS page, customer profile, orders
-3. Saves raw per-query JSON files + a combined `ce_payload.json` + an `extraction_summary.json`
+**What it generates:**
+
+| Entity | Count | Details |
+|--------|-------|---------|
+| Companies | 3 | Acme Corp (approved, 18 users), TechVendors Inc (approved, 8 external users), NewCo Startup (pending, 2 users) |
+| Teams | 7 | Sales, Operations, Engineering, Finance, IT Administration (Acme), Consulting, Support (TechVendors) |
+| Roles | 6 | Company Administrator, Senior Manager, Buyer/Purchaser, Viewer, External Partner, Restricted User |
+| Users | 28 | Mix of active (23) and inactive (5), real CE customers fill first, synthetic names fill the rest |
+| Permissions | 34 | All native B2B ACL permissions, each role explicitly defines allow/deny for all 34 |
+| Customer Groups | 5 | NOT LOGGED IN, General, Wholesale, Retailer, Partner |
+
+**Native Magento identity attributes included per user:**
+`created_at`, `updated_at`, `group_id`, `store_id`, `website_id`, `created_in`, `gender`, `dob`, `extension_attributes.company_attributes` (company_id, job_title, status, telephone)
 
 **What it outputs:**
 ```
-output/YYYYMMDD_HHMM_ce_extraction/
+output/YYYYMMDD_HHMM_b2b_extraction/
 ├── raw/
-│   ├── store_config.json
-│   ├── products_page_1.json
-│   ├── categories.json
-│   ├── cms_home.json
-│   ├── customer.json
-│   └── orders_page_1.json
-├── ce_payload.json              Everything combined in one file
-└── extraction_summary.json      Timing, counts, errors
+│   ├── store_config.json                       Real store config
+│   └── customers_rest_real.json                Real CE customers
+├── b2b_graphql_response_company_1.json         Acme Corp (18 users, 5 teams)
+├── b2b_graphql_response_company_2.json         TechVendors Inc (8 users, 2 teams)
+├── b2b_graphql_response_company_3.json         NewCo Startup (2 users, 0 teams)
+├── b2b_rest_roles_response.json                All 6 roles with 34 permissions each
+├── customers_rest.json                         All 28 enriched REST customers
+├── customer_groups.json                        5 customer groups
+└── extraction_summary.json                     Multi-company counts, status dist, errors
+```
+
+**How to feed to the connector pipeline:**
+```python
+# Per-company GraphQL response → EntityExtractor
+data = json.load(open("b2b_graphql_response_company_1.json"))
+extractor.extract(data["data"])
+
+# REST roles → RelationshipBuilder
+roles = json.load(open("b2b_rest_roles_response.json"))
+
+# REST customers → enriched identity attributes
+customers = json.load(open("customers_rest.json"))
 ```
 
 **What it does NOT do:**
 - No OAA/Veza integration — no `oaaclient`, no push
-- No B2B queries — those would fail on CE
+- No real B2B queries — those would fail on CE; all B2B structure is synthetic
 - No modification of the existing connector code
 
 **How to extend when B2B is available:**

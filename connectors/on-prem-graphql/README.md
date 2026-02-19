@@ -78,13 +78,25 @@ output/YYYYMMDD_HHMM_Magento_OnPrem_GraphQL/
 | User profiles | Full (email, name, status, job title) | Only authenticated user; others are `customer_{id}@unknown` |
 | Reports-to relationships | Complete | Incomplete (email unavailable for non-auth users) |
 
+## CE Data Extraction (Synthetic B2B)
+
+`extract_ce.py` connects to a Magento CE instance, fetches real customer identities, and wraps them in a synthetic B2B structure (3 companies, 7 teams, 6 roles, 28 users). This enables end-to-end pipeline testing without Adobe Commerce. See [CE_VS_B2B.md](CE_VS_B2B.md) for full details.
+
+```bash
+python extract_ce.py --admin --url http://localhost --debug
+```
+
+Outputs per-company GraphQL responses, enriched REST customers, customer groups, and role definitions — all in the exact formats the connector pipeline expects.
+
 ## Project Structure
 
 ```
 on-prem-graphql/
-  run.py                          Entry point
+  run.py                          Entry point (B2B connector)
+  extract_ce.py                   CE extraction + synthetic B2B data generation
   requirements.txt                Dependencies (includes shared library)
   .env.template                   Configuration template
+  CE_VS_B2B.md                    CE vs Adobe Commerce differences
   config/
     settings.py                   Defaults and provider name
   core/
