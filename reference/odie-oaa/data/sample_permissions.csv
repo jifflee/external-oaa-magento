@@ -1,0 +1,14 @@
+User Id,User Name,User Email,Application_FIN_ID,Application_FIN_Name,Application_FIN_Criticality,Permission
+U001,John Smith,john.smithcompany.local.com,FIN001,Trading Platform,High,SuperAdmin
+U002,Jane Doe,jane.doecompany.local.com,FIN001,Trading Platform,High,ReadOnly
+U003,Bob Wilson,bob.wilsoncompany.local.com,FIN001,Trading Platform,High,Editor
+U004,Alice Brown,alice.browncompany.local.com,FIN002,Risk Management System,High,Admin
+U001,John Smith,john.smithcompany.local.com,FIN002,Risk Management System,High,Auditor
+U005,Charlie Davis,charlie.daviscompany.local.com,FIN002,Risk Management System,High,Contributor
+U002,Jane Doe,jane.doecompany.local.com,FIN003,Portfolio Analytics,Medium,Admin
+U006,Diana Miller,diana.millercompany.local.com,FIN003,Portfolio Analytics,Medium,ReadOnly
+U003,Bob Wilson,bob.wilsoncompany.local.com,FIN003,Portfolio Analytics,Medium,ReadWrite
+U007,Test User,test.usercompany.local.com,FIN003,Portfolio Analytics,Medium,SpecialAccess
+U008,Sarah Connor,sarah.connorcompany.local.com,FIN003,Portfolio Analytics,Medium,DataExporter
+U009,Mike Johnson,mike.johnsoncompany.local.com,FIN003,Portfolio Analytics,Medium,ReportViewer
+U010,Lisa Chen,lisa.chencompany.local.com,FIN003,Portfolio Analytics,Medium,SystemBackup

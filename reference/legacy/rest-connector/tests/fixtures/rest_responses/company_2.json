@@ -1,0 +1,7 @@
+{
+  "id": 2,
+  "company_name": "Acme Corp",
+  "legal_name": "Acme Corporation LLC",
+  "company_email": "info@acme.com",
+  "super_user_id": 10
+}

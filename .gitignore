@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+dist/
+build/
+venv/
+.venv/
+
+# Environment and secrets
+.env
+*.pem
+*.key
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Output
+output/
+
+# Node
+node_modules/
+
+# Claude
+.claude/
+
+# Certs
+certs/
+
+# Embedded repos (has its own .git)
+reference/commerce-webapi/
