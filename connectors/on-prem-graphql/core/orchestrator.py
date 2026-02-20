@@ -54,11 +54,14 @@ from typing import Dict, Any
 
 from dotenv import load_dotenv
 
+import requests
+
 from .magento_client import MagentoGraphQLClient
 from .graphql_queries import FULL_EXTRACTION_QUERY
 from .entity_extractor import EntityExtractor, decode_graphql_id
 from .application_builder import ApplicationBuilder
 from .relationship_builder import RelationshipBuilder
+from .ce_data_builder import build_synthetic_graphql_response, build_synthetic_roles_response
 
 from magento_oaa_shared import OutputManager
 
@@ -76,6 +79,9 @@ class GraphQLOrchestrator:
         save_json: Whether to write OAA payload to disk (default: True).
         debug: Whether to enable verbose output (default: False).
         use_rest_supplement: Whether to call REST for per-role permissions (default: True).
+        ce_mode: If True, use CE fallback (synthetic B2B from real CE customers).
+        admin_username: Admin username for CE mode REST API access.
+        admin_password: Admin password for CE mode REST API access.
         output_manager: Handles timestamped output directories and retention cleanup.
     """
 
@@ -116,6 +122,13 @@ class GraphQLOrchestrator:
             == "true"
         )
 
+        # CE fallback mode settings
+        self.ce_mode = (
+            os.getenv("CE_MODE", str(DEFAULT_SETTINGS.get("CE_MODE", False))).lower() == "true"
+        )
+        self.admin_username = os.getenv("MAGENTO_ADMIN_USERNAME", "")
+        self.admin_password = os.getenv("MAGENTO_ADMIN_PASSWORD", "")
+
         # Initialize the output manager (creates timestamped dirs, handles cleanup)
         self.output_manager = OutputManager(output_dir, self.provider_name, retention_days)
 
@@ -124,8 +137,8 @@ class GraphQLOrchestrator:
 
         Checks:
             - MAGENTO_STORE_URL is set
-            - MAGENTO_USERNAME is set
-            - MAGENTO_PASSWORD is set
+            - MAGENTO_USERNAME and MAGENTO_PASSWORD are set
+            - In CE mode: MAGENTO_ADMIN_USERNAME and MAGENTO_ADMIN_PASSWORD are set
 
         Returns:
             True if all required values are present, False otherwise.
@@ -138,6 +151,12 @@ class GraphQLOrchestrator:
             errors.append("MAGENTO_USERNAME is required")
         if not self.password:
             errors.append("MAGENTO_PASSWORD is required")
+
+        if self.ce_mode:
+            if not self.admin_username:
+                errors.append("MAGENTO_ADMIN_USERNAME is required for CE mode")
+            if not self.admin_password:
+                errors.append("MAGENTO_ADMIN_PASSWORD is required for CE mode")
 
         if errors:
             print("\nConfiguration Errors:")
@@ -165,6 +184,7 @@ class GraphQLOrchestrator:
             "config": {
                 "store_url": self.store_url,
                 "use_rest_supplement": self.use_rest_supplement,
+                "ce_mode": self.ce_mode,
             },
             "success": False,
         }
@@ -180,28 +200,11 @@ class GraphQLOrchestrator:
             magento.authenticate()
             print("  Authentication successful")
 
-            # Step 2: Execute the single GraphQL extraction query
-            print(f"\n{'='*60}")
-            print("STEP 2: GRAPHQL EXTRACTION")
-            print("="*60)
-            graphql_data = magento.execute_graphql(FULL_EXTRACTION_QUERY)
-            print("  GraphQL query executed successfully")
-
-            # Step 3: Optionally fetch per-role permissions via REST
-            rest_roles = None
-            if self.use_rest_supplement:
-                print(f"\n{'='*60}")
-                print("STEP 3: REST ROLE SUPPLEMENT")
-                print("="*60)
-                try:
-                    company_data = graphql_data.get("company", {})
-                    company_id = decode_graphql_id(company_data.get("id", ""))
-                    if company_id:
-                        rest_roles = magento.get_company_roles_rest(company_id)
-                        print(f"  Fetched {len(rest_roles)} roles via REST")
-                except Exception as e:
-                    print(f"  Warning: REST role supplement failed: {e}")
-                    print("  Continuing without explicit permission data")
+            # Steps 2-3: Data acquisition (CE mode or standard GraphQL)
+            if self.ce_mode:
+                graphql_data, rest_roles = self._extract_ce_data()
+            else:
+                graphql_data, rest_roles = self._extract_graphql_data(magento)
 
             # Step 4: Parse GraphQL response into normalized entities
             print(f"\n{'='*60}")
@@ -270,6 +273,112 @@ class GraphQLOrchestrator:
             print(f"\n  Results saved to: {results_path}")
 
         return results
+
+    def _extract_graphql_data(self, magento: MagentoGraphQLClient):
+        """Standard data acquisition: GraphQL query + optional REST supplement.
+
+        Returns:
+            Tuple of (graphql_data, rest_roles) where rest_roles may be None.
+        """
+        # Step 2: Execute the single GraphQL extraction query
+        print(f"\n{'='*60}")
+        print("STEP 2: GRAPHQL EXTRACTION")
+        print("="*60)
+        graphql_data = magento.execute_graphql(FULL_EXTRACTION_QUERY)
+        print("  GraphQL query executed successfully")
+
+        # Step 3: Optionally fetch per-role permissions via REST
+        rest_roles = None
+        if self.use_rest_supplement:
+            print(f"\n{'='*60}")
+            print("STEP 3: REST ROLE SUPPLEMENT")
+            print("="*60)
+            try:
+                company_data = graphql_data.get("company", {})
+                company_id = decode_graphql_id(company_data.get("id", ""))
+                if company_id:
+                    rest_roles = magento.get_company_roles_rest(company_id)
+                    print(f"  Fetched {len(rest_roles)} roles via REST")
+            except Exception as e:
+                print(f"  Warning: REST role supplement failed: {e}")
+                print("  Continuing without explicit permission data")
+
+        return graphql_data, rest_roles
+
+    def _extract_ce_data(self):
+        """CE fallback: fetch real customers via REST, build synthetic B2B structures.
+
+        Uses admin credentials to call the Magento REST API for customer data,
+        then wraps those identities in synthetic B2B company/team/role structures.
+
+        Returns:
+            Tuple of (graphql_data, rest_roles) in the same format as standard mode.
+        """
+        # Step 2: Fetch real CE customers via admin REST API
+        print(f"\n{'='*60}")
+        print("STEP 2: CE MODE - FETCH CUSTOMERS VIA REST")
+        print("="*60)
+
+        admin_user = self.admin_username
+        admin_pass = self.admin_password
+        if not admin_user or not admin_pass:
+            raise ValueError(
+                "CE mode requires MAGENTO_ADMIN_USERNAME and MAGENTO_ADMIN_PASSWORD. "
+                "Set them in .env or use environment variables."
+            )
+
+        # Get admin bearer token
+        token_url = f"{self.store_url}/rest/V1/integration/admin/token"
+        if self.debug:
+            print(f"  Authenticating as admin: {admin_user}")
+        resp = requests.post(
+            token_url,
+            json={"username": admin_user, "password": admin_pass},
+            timeout=30,
+        )
+        resp.raise_for_status()
+        admin_token = resp.json()
+        print("  Admin authentication successful")
+
+        # Fetch all customers
+        search_url = f"{self.store_url}/rest/V1/customers/search"
+        headers = {
+            "Authorization": f"Bearer {admin_token}",
+            "Content-Type": "application/json",
+        }
+        params = {
+            "searchCriteria[pageSize]": 100,
+            "searchCriteria[currentPage]": 1,
+        }
+        if self.debug:
+            print(f"  Fetching customers from: {search_url}")
+        resp = requests.get(search_url, headers=headers, params=params, timeout=30)
+        resp.raise_for_status()
+        customers = resp.json().get("items", [])
+        print(f"  Fetched {len(customers)} real CE customers")
+
+        if self.debug:
+            for c in customers:
+                print(f"    {c['email']} ({c.get('firstname', '')} {c.get('lastname', '')})")
+
+        # Step 3: Build synthetic B2B structures
+        print(f"\n{'='*60}")
+        print("STEP 3: CE MODE - BUILD SYNTHETIC B2B STRUCTURES")
+        print("="*60)
+
+        graphql_data = build_synthetic_graphql_response(customers)
+        rest_roles = build_synthetic_roles_response()
+
+        company_name = graphql_data.get("company", {}).get("name", "Unknown")
+        items = graphql_data.get("company", {}).get("structure", {}).get("items", [])
+        user_count = sum(1 for i in items if i["entity"]["__typename"] == "Customer")
+        team_count = sum(1 for i in items if i["entity"]["__typename"] == "CompanyTeam")
+        print(f"  Company: {company_name}")
+        print(f"  Users: {user_count} ({len(customers)} real + {user_count - len(customers)} synthetic)")
+        print(f"  Teams: {team_count}")
+        print(f"  Roles: {len(rest_roles)} (with 34 permissions each)")
+
+        return graphql_data, rest_roles
 
     def print_summary(self, results: Dict):
         """Print a human-readable execution summary.

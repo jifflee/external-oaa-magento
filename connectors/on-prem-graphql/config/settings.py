@@ -18,6 +18,9 @@ Settings reference:
   SAVE_JSON               Whether to write the OAA payload to disk (default: True)
   DEBUG                   Whether to print verbose output (default: False)
   USE_REST_ROLE_SUPPLEMENT Whether to call the REST role endpoint for per-role permissions
+  CE_MODE                 Use CE fallback mode with synthetic B2B data (default: False)
+  MAGENTO_ADMIN_USERNAME  Admin username for CE mode REST API access
+  MAGENTO_ADMIN_PASSWORD  Admin password for CE mode REST API access
 """
 
 PROVIDER_NAME = "Magento_OnPrem_GraphQL"
@@ -29,4 +32,7 @@ DEFAULT_SETTINGS = {
     "SAVE_JSON": True,
     "DEBUG": False,
     "USE_REST_ROLE_SUPPLEMENT": True,
+    "CE_MODE": False,
+    "MAGENTO_ADMIN_USERNAME": "",
+    "MAGENTO_ADMIN_PASSWORD": "",
 }

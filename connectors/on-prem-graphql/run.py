@@ -19,6 +19,7 @@ Usage:
     python run.py               # Extract and save JSON
     python run.py --debug       # Verbose output
     python run.py --no-rest     # Skip REST role supplement
+    python run.py --ce-mode     # CE fallback (synthetic B2B from real CE customers)
     python run.py --version     # Show version
     python run.py --env /path   # Use alternate .env file
 """
@@ -43,6 +44,7 @@ def main():
     parser.add_argument("--env", "-e", default="./.env", help="Path to .env file")
     parser.add_argument("--debug", action="store_true", help="Enable debug output")
     parser.add_argument("--no-rest", action="store_true", help="Skip REST role supplement")
+    parser.add_argument("--ce-mode", action="store_true", help="CE fallback: synthetic B2B from real CE customers")
     parser.add_argument("--version", "-v", action="store_true", help="Show version and exit")
 
     args = parser.parse_args()
@@ -59,12 +61,15 @@ def main():
         orchestrator.debug = True
     if args.no_rest:
         orchestrator.use_rest_supplement = False
+    if args.ce_mode:
+        orchestrator.ce_mode = True
 
     # Print header
     print(f"\n{'='*60}")
     print(f"MAGENTO B2B GRAPHQL EXTRACTOR v{VERSION}")
     print("="*60)
     print(f"Store: {orchestrator.store_url}")
+    print(f"Mode: {'CE Fallback (synthetic B2B)' if orchestrator.ce_mode else 'Standard (Adobe Commerce B2B)'}")
     print(f"REST Supplement: {'Enabled' if orchestrator.use_rest_supplement else 'Disabled'}")
 
     # Validate required configuration before proceeding

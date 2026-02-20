@@ -1,0 +1,616 @@
+{
+  "custom_property_definition": {
+    "applications": [
+      {
+        "application_type": "Magento B2B On-Prem (GraphQL)",
+        "application_properties": {
+          "store_url": "STRING",
+          "sync_timestamp": "STRING",
+          "company_name": "STRING"
+        },
+        "local_user_properties": {
+          "job_title": "STRING",
+          "telephone": "STRING",
+          "is_company_admin": "BOOLEAN",
+          "magento_customer_id": "STRING",
+          "company_id": "STRING",
+          "reports_to": "STRING"
+        },
+        "local_group_properties": {
+          "legal_name": "STRING",
+          "company_email": "STRING",
+          "admin_email": "STRING",
+          "magento_company_id": "STRING",
+          "description": "STRING",
+          "magento_team_id": "STRING",
+          "parent_company_id": "STRING"
+        },
+        "local_role_properties": {
+          "magento_role_id": "STRING",
+          "company_id": "STRING"
+        }
+      }
+    ]
+  },
+  "applications": [
+    {
+      "name": "magento_onprem_graphql_1",
+      "application_type": "Magento B2B On-Prem (GraphQL)",
+      "description": "Adobe Commerce B2B - Acme Corp (On-Prem, GraphQL connector)",
+      "local_users": [
+        {
+          "name": "john.doe@acmecorp.example.com",
+          "email": "john.doe@acmecorp.example.com",
+          "identities": [
+            "john.doe@acmecorp.example.com"
+          ],
+          "groups": [
+            "company_1"
+          ],
+          "is_active": true,
+          "custom_properties": {
+            "job_title": "CEO",
+            "telephone": "415-555-0001",
+            "is_company_admin": true,
+            "company_id": "1"
+          },
+          "id": "john.doe@acmecorp.example.com"
+        },
+        {
+          "name": "sarah.chen@acmecorp.example.com",
+          "email": "sarah.chen@acmecorp.example.com",
+          "identities": [
+            "sarah.chen@acmecorp.example.com"
+          ],
+          "groups": [
+            "company_1",
+            "team_1"
+          ],
+          "is_active": true,
+          "custom_properties": {
+            "job_title": "VP of Sales",
+            "telephone": "415-555-0002",
+            "is_company_admin": false,
+            "company_id": "1"
+          },
+          "id": "sarah.chen@acmecorp.example.com"
+        },
+        {
+          "name": "michael.rodriguez@acmecorp.example.com",
+          "email": "michael.rodriguez@acmecorp.example.com",
+          "identities": [
+            "michael.rodriguez@acmecorp.example.com"
+          ],
+          "groups": [
+            "company_1",
+            "team_1"
+          ],
+          "is_active": true,
+          "custom_properties": {
+            "job_title": "Senior Buyer",
+            "telephone": "415-555-0003",
+            "is_company_admin": false,
+            "company_id": "1",
+            "reports_to": "sarah.chen@acmecorp.example.com"
+          },
+          "id": "michael.rodriguez@acmecorp.example.com"
+        },
+        {
+          "name": "emily.nguyen@acmecorp.example.com",
+          "email": "emily.nguyen@acmecorp.example.com",
+          "identities": [
+            "emily.nguyen@acmecorp.example.com"
+          ],
+          "groups": [
+            "company_1",
+            "team_1"
+          ],
+          "is_active": true,
+          "custom_properties": {
+            "job_title": "Sales Analyst",
+            "telephone": "415-555-0004",
+            "is_company_admin": false,
+            "company_id": "1",
+            "reports_to": "sarah.chen@acmecorp.example.com"
+          },
+          "id": "emily.nguyen@acmecorp.example.com"
+        },
+        {
+          "name": "david.kim@acmecorp.example.com",
+          "email": "david.kim@acmecorp.example.com",
+          "identities": [
+            "david.kim@acmecorp.example.com"
+          ],
+          "groups": [
+            "company_1",
+            "team_2"
+          ],
+          "is_active": true,
+          "custom_properties": {
+            "job_title": "Operations Director",
+            "telephone": "415-555-0005",
+            "is_company_admin": false,
+            "company_id": "1"
+          },
+          "id": "david.kim@acmecorp.example.com"
+        }
+      ],
+      "local_groups": [
+        {
+          "name": "Acme Corp",
+          "groups": [
+            "team_1",
+            "team_2"
+          ],
+          "custom_properties": {
+            "legal_name": "Acme Corporation LLC",
+            "company_email": "info@acmecorp.example.com",
+            "admin_email": "john.doe@acmecorp.example.com",
+            "magento_company_id": "1"
+          },
+          "id": "company_1"
+        },
+        {
+          "name": "Sales",
+          "custom_properties": {
+            "description": "Sales and customer-facing operations",
+            "magento_team_id": "1",
+            "parent_company_id": "1"
+          },
+          "id": "team_1"
+        },
+        {
+          "name": "Operations",
+          "custom_properties": {
+            "description": "Internal operations and procurement",
+            "magento_team_id": "2",
+            "parent_company_id": "1"
+          },
+          "id": "team_2"
+        }
+      ],
+      "local_roles": [
+        {
+          "name": "Company Administrator",
+          "permissions": [
+            "Magento_Company::index",
+            "Magento_Sales::all",
+            "Magento_Sales::place_order",
+            "Magento_Sales::payment_account",
+            "Magento_Sales::view_orders",
+            "Magento_Sales::view_orders_sub",
+            "Magento_NegotiableQuote::all",
+            "Magento_NegotiableQuote::view_quotes",
+            "Magento_NegotiableQuote::manage",
+            "Magento_NegotiableQuote::checkout",
+            "Magento_NegotiableQuote::view_quotes_sub",
+            "Magento_PurchaseOrder::all",
+            "Magento_PurchaseOrder::view_purchase_orders",
+            "Magento_PurchaseOrder::view_purchase_orders_for_subordinates",
+            "Magento_PurchaseOrder::view_purchase_orders_for_company",
+            "Magento_PurchaseOrder::autoapprove_purchase_order",
+            "Magento_PurchaseOrderRule::super_approve_purchase_order",
+            "Magento_PurchaseOrderRule::view_approval_rules",
+            "Magento_PurchaseOrderRule::manage_approval_rules",
+            "Magento_Company::view",
+            "Magento_Company::view_account",
+            "Magento_Company::edit_account",
+            "Magento_Company::view_address",
+            "Magento_Company::edit_address",
+            "Magento_Company::contacts",
+            "Magento_Company::payment_information",
+            "Magento_Company::shipping_information",
+            "Magento_Company::user_management",
+            "Magento_Company::roles_view",
+            "Magento_Company::roles_edit",
+            "Magento_Company::users_view",
+            "Magento_Company::users_edit",
+            "Magento_Company::credit",
+            "Magento_Company::credit_history"
+          ],
+          "custom_properties": {
+            "magento_role_id": "1",
+            "company_id": "1"
+          },
+          "id": "role_1_1"
+        },
+        {
+          "name": "Senior Manager",
+          "permissions": [
+            "Magento_Company::index",
+            "Magento_Sales::all",
+            "Magento_Sales::place_order",
+            "Magento_Sales::view_orders",
+            "Magento_Sales::view_orders_sub",
+            "Magento_NegotiableQuote::view_quotes",
+            "Magento_Company::view",
+            "Magento_Company::view_account",
+            "Magento_Company::roles_view",
+            "Magento_Company::users_view"
+          ],
+          "custom_properties": {
+            "magento_role_id": "2",
+            "company_id": "1"
+          },
+          "id": "role_1_2"
+        },
+        {
+          "name": "Buyer/Purchaser",
+          "permissions": [
+            "Magento_Company::index",
+            "Magento_Sales::all",
+            "Magento_Sales::place_order",
+            "Magento_Sales::view_orders",
+            "Magento_PurchaseOrder::all",
+            "Magento_PurchaseOrder::view_purchase_orders",
+            "Magento_Company::view"
+          ],
+          "custom_properties": {
+            "magento_role_id": "3",
+            "company_id": "1"
+          },
+          "id": "role_1_3"
+        },
+        {
+          "name": "Viewer",
+          "permissions": [
+            "Magento_Company::index",
+            "Magento_Sales::view_orders",
+            "Magento_NegotiableQuote::view_quotes",
+            "Magento_PurchaseOrder::view_purchase_orders",
+            "Magento_Company::view",
+            "Magento_Company::view_account",
+            "Magento_Company::view_address",
+            "Magento_Company::contacts",
+            "Magento_Company::roles_view",
+            "Magento_Company::users_view"
+          ],
+          "custom_properties": {
+            "magento_role_id": "4",
+            "company_id": "1"
+          },
+          "id": "role_1_4"
+        }
+      ],
+      "local_access_creds": [],
+      "tags": [],
+      "custom_properties": {
+        "store_url": "https://magento.example.com",
+        "sync_timestamp": "2026-02-20T12:00:00+00:00",
+        "company_name": "Acme Corp"
+      },
+      "resources": []
+    }
+  ],
+  "permissions": [
+    {
+      "name": "Magento_Company::index",
+      "permission_type": [
+        "DataRead"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_Sales::all",
+      "permission_type": [
+        "DataWrite"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_Sales::place_order",
+      "permission_type": [
+        "DataWrite"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_Sales::payment_account",
+      "permission_type": [
+        "DataWrite"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_Sales::view_orders",
+      "permission_type": [
+        "DataWrite"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_Sales::view_orders_sub",
+      "permission_type": [
+        "DataWrite"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_NegotiableQuote::all",
+      "permission_type": [
+        "DataWrite"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_NegotiableQuote::view_quotes",
+      "permission_type": [
+        "DataWrite"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_NegotiableQuote::manage",
+      "permission_type": [
+        "DataWrite"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_NegotiableQuote::checkout",
+      "permission_type": [
+        "DataWrite"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_NegotiableQuote::view_quotes_sub",
+      "permission_type": [
+        "DataWrite"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_PurchaseOrder::all",
+      "permission_type": [
+        "DataWrite"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_PurchaseOrder::view_purchase_orders",
+      "permission_type": [
+        "DataWrite"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_PurchaseOrder::view_purchase_orders_for_subordinates",
+      "permission_type": [
+        "DataWrite"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_PurchaseOrder::view_purchase_orders_for_company",
+      "permission_type": [
+        "DataWrite"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_PurchaseOrder::autoapprove_purchase_order",
+      "permission_type": [
+        "DataWrite"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_PurchaseOrderRule::super_approve_purchase_order",
+      "permission_type": [
+        "DataWrite"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_PurchaseOrderRule::view_approval_rules",
+      "permission_type": [
+        "DataWrite"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_PurchaseOrderRule::manage_approval_rules",
+      "permission_type": [
+        "DataWrite"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_Company::view",
+      "permission_type": [
+        "DataRead"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_Company::view_account",
+      "permission_type": [
+        "DataRead"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_Company::edit_account",
+      "permission_type": [
+        "DataRead"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_Company::view_address",
+      "permission_type": [
+        "DataRead"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_Company::edit_address",
+      "permission_type": [
+        "DataRead"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_Company::contacts",
+      "permission_type": [
+        "DataRead"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_Company::payment_information",
+      "permission_type": [
+        "DataRead"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_Company::shipping_information",
+      "permission_type": [
+        "DataRead"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_Company::user_management",
+      "permission_type": [
+        "DataWrite"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_Company::roles_view",
+      "permission_type": [
+        "DataWrite"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_Company::roles_edit",
+      "permission_type": [
+        "DataWrite"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_Company::users_view",
+      "permission_type": [
+        "DataWrite"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_Company::users_edit",
+      "permission_type": [
+        "DataWrite"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_Company::credit",
+      "permission_type": [
+        "DataRead"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    },
+    {
+      "name": "Magento_Company::credit_history",
+      "permission_type": [
+        "DataRead"
+      ],
+      "apply_to_sub_resources": false,
+      "resource_types": []
+    }
+  ],
+  "identity_to_permissions": [
+    {
+      "identity": "john.doe@acmecorp.example.com",
+      "identity_type": "local_user",
+      "role_assignments": [
+        {
+          "application": "magento_onprem_graphql_1",
+          "role": "role_1_1",
+          "apply_to_application": true
+        }
+      ]
+    },
+    {
+      "identity": "sarah.chen@acmecorp.example.com",
+      "identity_type": "local_user",
+      "role_assignments": [
+        {
+          "application": "magento_onprem_graphql_1",
+          "role": "role_1_2",
+          "apply_to_application": true
+        }
+      ]
+    },
+    {
+      "identity": "michael.rodriguez@acmecorp.example.com",
+      "identity_type": "local_user",
+      "role_assignments": [
+        {
+          "application": "magento_onprem_graphql_1",
+          "role": "role_1_3",
+          "apply_to_application": true
+        }
+      ]
+    },
+    {
+      "identity": "emily.nguyen@acmecorp.example.com",
+      "identity_type": "local_user",
+      "role_assignments": [
+        {
+          "application": "magento_onprem_graphql_1",
+          "role": "role_1_4",
+          "apply_to_application": true
+        }
+      ]
+    },
+    {
+      "identity": "david.kim@acmecorp.example.com",
+      "identity_type": "local_user",
+      "role_assignments": [
+        {
+          "application": "magento_onprem_graphql_1",
+          "role": "role_1_2",
+          "apply_to_application": true
+        }
+      ]
+    }
+  ]
+}
