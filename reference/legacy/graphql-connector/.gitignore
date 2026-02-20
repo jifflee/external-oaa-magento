@@ -1,9 +1,0 @@
-__pycache__/
-*.pyc
-*.pyo
-.env
-venv/
-*.egg-info/
-output/*/
-!output/.gitkeep
-.DS_Store
