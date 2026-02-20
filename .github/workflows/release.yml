@@ -66,33 +66,36 @@ jobs:
 
       - name: Sync repo metadata
         run: |
-          # Sync description
-          desc=$(gh repo view "$SOURCE_REPO" --json description -q '.description')
-          gh repo edit "$EXTERNAL_REPO" --description "$desc" || true
+          # Read from source using GITHUB_TOKEN (has contents:read on source repo)
+          desc=$(GH_TOKEN="${SOURCE_TOKEN}" gh repo view "$SOURCE_REPO" --json description -q '.description')
+          topics=$(GH_TOKEN="${SOURCE_TOKEN}" gh repo view "$SOURCE_REPO" --json repositoryTopics -q '.repositoryTopics[].name')
 
-          # Sync topics
-          topics=$(gh repo view "$SOURCE_REPO" --json repositoryTopics -q '.repositoryTopics[].name')
+          # Write to external using EXTERNAL_PAT
+          GH_TOKEN="${EXTERNAL_TOKEN}" gh repo edit "$EXTERNAL_REPO" --description "$desc" || true
           for topic in $topics; do
-            gh repo edit "$EXTERNAL_REPO" --add-topic "$topic" || true
+            GH_TOKEN="${EXTERNAL_TOKEN}" gh repo edit "$EXTERNAL_REPO" --add-topic "$topic" || true
           done
         env:
-          GH_TOKEN: ${{ secrets.EXTERNAL_PAT }}
+          SOURCE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EXTERNAL_TOKEN: ${{ secrets.EXTERNAL_PAT }}
 
       - name: Create release on external
         run: |
           VERSION="v${{ steps.version.outputs.version }}"
 
           # Skip if release already exists on external
-          if gh release view "$VERSION" --repo "$EXTERNAL_REPO" >/dev/null 2>&1; then
+          if GH_TOKEN="${EXTERNAL_TOKEN}" gh release view "$VERSION" --repo "$EXTERNAL_REPO" >/dev/null 2>&1; then
             echo "Release $VERSION already exists on external — skipping."
             exit 0
           fi
 
-          # Copy release body from source
-          body=$(gh release view "$VERSION" --repo "$SOURCE_REPO" --json body -q '.body' 2>/dev/null || echo "Release $VERSION")
+          # Read release body from source using GITHUB_TOKEN
+          body=$(GH_TOKEN="${SOURCE_TOKEN}" gh release view "$VERSION" --repo "$SOURCE_REPO" --json body -q '.body' 2>/dev/null || echo "Release $VERSION")
 
-          gh release create "$VERSION" --repo "$EXTERNAL_REPO" \
+          # Create release on external using EXTERNAL_PAT
+          GH_TOKEN="${EXTERNAL_TOKEN}" gh release create "$VERSION" --repo "$EXTERNAL_REPO" \
             --title "$VERSION" \
             --notes "$body"
         env:
-          GH_TOKEN: ${{ secrets.EXTERNAL_PAT }}
+          SOURCE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EXTERNAL_TOKEN: ${{ secrets.EXTERNAL_PAT }}
