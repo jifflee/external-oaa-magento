@@ -61,7 +61,7 @@ jobs:
       - name: Push main to external
         run: |
           git remote add external "https://x-access-token:${EXTERNAL_PAT}@github.com/${EXTERNAL_REPO}.git"
-          git push external main
+          git push --force external main
         env:
           EXTERNAL_PAT: ${{ secrets.EXTERNAL_PAT }}
 
