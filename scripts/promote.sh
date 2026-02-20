@@ -135,10 +135,11 @@ promote_qa_to_main() {
 # ---------------------------------------------------------------------------
 publish() {
     local remote="external"
+    local source_repo="jifflee/source-oaa-magento"
+    local external_repo="jifflee/external-oaa-magento"
 
     require_clean_tree
 
-    # Verify we're pushing main
     info "Publishing main → $remote (external-oaa-magento)"
 
     # Verify the remote exists
@@ -149,7 +150,33 @@ publish() {
     # Push main to external
     git push "$remote" main
 
-    info "Done. main pushed to $(git remote get-url "$remote")"
+    # Sync repo description and topics from source
+    info "Syncing repo metadata..."
+    local desc
+    desc=$(gh repo view "$source_repo" --json description -q '.description')
+    gh repo edit "$external_repo" --description "$desc" 2>/dev/null || true
+
+    local topics
+    topics=$(gh repo view "$source_repo" --json repositoryTopics -q '.repositoryTopics[].name')
+    for topic in $topics; do
+        gh repo edit "$external_repo" --add-topic "$topic" 2>/dev/null || true
+    done
+
+    # Sync release if VERSION tag doesn't exist on external
+    local version
+    version=$(cat "$REPO_ROOT/VERSION" | tr -d '[:space:]')
+    if ! gh release view "v${version}" --repo "$external_repo" > /dev/null 2>&1; then
+        info "Creating release v${version} on external..."
+        local body
+        body=$(gh release view "v${version}" --repo "$source_repo" --json body -q '.body' 2>/dev/null || echo "Release v${version}")
+        gh release create "v${version}" --repo "$external_repo" \
+            --title "v${version}" \
+            --notes "$body"
+    else
+        info "Release v${version} already exists on external."
+    fi
+
+    info "Done. main + metadata synced to $external_repo"
 }
 
 # ---------------------------------------------------------------------------
