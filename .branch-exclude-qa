@@ -5,6 +5,7 @@ deployment/
 backlog/
 reference/
 ARCHITECTURE.md
+CONTRIBUTING.md
 connectors/on-prem-graphql/extract_ce.py
 connectors/on-prem-graphql/CE_VS_B2B.md
 connectors/on-prem-rest/
