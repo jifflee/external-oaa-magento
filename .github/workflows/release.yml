@@ -42,7 +42,8 @@ jobs:
     needs: [release]
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    permissions: {}
+    permissions:
+      contents: read
     env:
       SOURCE_REPO: jifflee/source-oaa-magento
       EXTERNAL_REPO: jifflee/external-oaa-magento
