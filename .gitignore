@@ -13,12 +13,6 @@ venv/
 *.pem
 *.key
 
-# Terraform
-.terraform/
-*.tfstate
-*.tfstate.*
-terraform.tfvars
-
 # IDE
 .vscode/
 .idea/
@@ -38,6 +32,3 @@ node_modules/
 
 # Certs
 certs/
-
-# Embedded repos (has its own .git)
-reference/commerce-webapi/

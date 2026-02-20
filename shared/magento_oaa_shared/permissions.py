@@ -1,8 +1,32 @@
 """
-Magento B2B ACL Permission Definitions.
+Magento B2B ACL Permission Definitions — 34 granular access control resources.
 
-34 granular ACL resources from Magento B2B.
-These resource IDs are returned by both GraphQL and REST APIs.
+Adobe Commerce B2B uses a tree of ACL (Access Control List) resources to control
+what actions each company role can perform. There are exactly 34 resources across
+7 categories:
+
+  base (1):           Magento_Company::index — root "All Access" permission
+  sales (5):          Order placement, viewing, subordinate orders, pay on account
+  quotes (5):         Negotiable quote viewing, management, checkout
+  purchase_orders (8): Purchase order viewing, approval, auto-approve, rules
+  company (8):        Company profile viewing/editing, contacts, payment/shipping info
+  users (5):          User and role viewing/management
+  credit (2):         Company credit and credit history
+
+Namespace note:
+  31 resources use standard namespaces (Magento_Company::, Magento_Sales::, etc.)
+  3 resources use Magento_PurchaseOrderRule:: (not PurchaseOrder) for approval rules.
+  This matches the official Adobe Commerce B2B documentation.
+
+Each entry in MAGENTO_ACL_PERMISSIONS maps:
+  resource_id -> (display_name, category)
+
+PERMISSION_CATEGORIES maps each category to an OAA permission type:
+  DataRead for read-only operations, DataWrite for mutating operations.
+
+Usage:
+  define_oaa_permissions(app) registers all 34 resources as custom permissions
+  on a Veza OAA CustomApplication instance.
 
 Source: Adobe Commerce B2B documentation (b2b-roles.md)
 """
@@ -10,7 +34,7 @@ Source: Adobe Commerce B2B documentation (b2b-roles.md)
 from oaaclient.templates import OAAPermission
 
 
-# Complete ACL permission catalog - 34 resources
+# Complete ACL permission catalog — 34 resources
 MAGENTO_ACL_PERMISSIONS = {
     # Base
     "Magento_Company::index": ("All Access", "base"),
@@ -62,7 +86,8 @@ MAGENTO_ACL_PERMISSIONS = {
     "Magento_Company::credit_history": ("Credit History", "credit"),
 }
 
-# Categories with OAA permission type mapping
+# Maps each category to an OAA permission type.
+# DataRead = read-only access, DataWrite = can create/modify/delete.
 PERMISSION_CATEGORIES = {
     "base": "DataRead",
     "sales": "DataWrite",
@@ -74,20 +99,15 @@ PERMISSION_CATEGORIES = {
 }
 
 
-def get_permission_name(resource_id: str) -> str:
-    """Get display name for a resource ID."""
-    entry = MAGENTO_ACL_PERMISSIONS.get(resource_id)
-    return entry[0] if entry else resource_id
-
-
-def get_permission_category(resource_id: str) -> str:
-    """Get category for a resource ID."""
-    entry = MAGENTO_ACL_PERMISSIONS.get(resource_id)
-    return entry[1] if entry else "unknown"
-
-
 def define_oaa_permissions(app):
-    """Define all 34 Magento ACL permissions on a CustomApplication."""
+    """Register all 34 Magento ACL permissions on a Veza OAA CustomApplication.
+
+    Iterates over MAGENTO_ACL_PERMISSIONS and calls app.add_custom_permission()
+    for each resource, mapping the category to the appropriate OAAPermission type.
+
+    Args:
+        app: A CustomApplication instance from oaaclient.templates.
+    """
     for resource_id, (display_name, category) in MAGENTO_ACL_PERMISSIONS.items():
         permissions = []
         perm_type = PERMISSION_CATEGORIES.get(category, "DataRead")

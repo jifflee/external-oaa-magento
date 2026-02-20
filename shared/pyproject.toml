@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "magento-oaa-shared"
-version = "0.1.0"
-description = "Shared utilities for Magento B2B Veza OAA connectors"
+version = "0.1.1"  # keep in sync with /VERSION
+description = "Shared utilities for the Magento B2B data extractor"
 requires-python = ">=3.9"
 dependencies = [
     "oaaclient>=1.0.0",
