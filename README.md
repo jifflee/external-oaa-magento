@@ -123,29 +123,6 @@ cd shared && pytest tests/
 cd connectors/on-prem-graphql && pytest tests/
 ```
 
-## Development & Release Workflow
+## License
 
-> **This section is only visible on the `dev` branch of `source-oaa-magento`.**
-
-This project uses a two-repo, three-branch strategy:
-
-```
-source-oaa-magento (private)              external-oaa-magento (public)
-  dev ──→ qa ──→ main ──── publish ────→    main
-```
-
-| Branch | Purpose |
-|--------|---------|
-| `dev` | Active development. All code + dev tools. |
-| `qa` | Staging. Production code only, dev tools stripped. |
-| `main` | Releases. Pushed to external repo. VERSION bump triggers auto-release. |
-
-Promotions are automated via `scripts/promote.sh`:
-
-```bash
-./scripts/promote.sh dev-to-qa      # merge + strip dev-only files
-./scripts/promote.sh qa-to-main     # merge qa into main
-./scripts/promote.sh publish         # push main + metadata to external repo
-```
-
-See **[CONTRIBUTING.md](CONTRIBUTING.md)** for the full SDLC documentation, branch details, file stripping rules, remote setup, and troubleshooting.
+See [LICENSE](LICENSE).

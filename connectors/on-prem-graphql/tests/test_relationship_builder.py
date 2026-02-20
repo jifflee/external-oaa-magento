@@ -1,7 +1,5 @@
 """Tests for core.relationship_builder."""
 
-import json
-import os
 import pytest
 
 oaaclient = pytest.importorskip("oaaclient", reason="oaaclient not installed")
@@ -9,13 +7,54 @@ oaaclient = pytest.importorskip("oaaclient", reason="oaaclient not installed")
 from core.application_builder import ApplicationBuilder  # noqa: E402
 from core.relationship_builder import RelationshipBuilder  # noqa: E402
 
-FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
+
+REST_ROLES_ITEMS = [
+    {
+        "id": 1,
+        "role_name": "Company Administrator",
+        "permissions": [
+            {"resource_id": "Magento_Company::index", "permission": "allow"},
+            {"resource_id": "Magento_Sales::all", "permission": "allow"},
+            {"resource_id": "Magento_Sales::place_order", "permission": "allow"},
+            {"resource_id": "Magento_Sales::view_orders", "permission": "allow"},
+            {"resource_id": "Magento_Company::view", "permission": "allow"},
+            {"resource_id": "Magento_Company::user_management", "permission": "allow"},
+            {"resource_id": "Magento_Company::roles_view", "permission": "allow"},
+            {"resource_id": "Magento_Company::roles_edit", "permission": "allow"},
+            {"resource_id": "Magento_Company::users_view", "permission": "allow"},
+            {"resource_id": "Magento_Company::users_edit", "permission": "allow"},
+        ],
+    },
+    {
+        "id": 2,
+        "role_name": "Default User",
+        "permissions": [
+            {"resource_id": "Magento_Company::index", "permission": "allow"},
+            {"resource_id": "Magento_Sales::all", "permission": "allow"},
+            {"resource_id": "Magento_Sales::place_order", "permission": "allow"},
+            {"resource_id": "Magento_Sales::view_orders", "permission": "allow"},
+            {"resource_id": "Magento_NegotiableQuote::all", "permission": "deny"},
+            {"resource_id": "Magento_Company::view", "permission": "allow"},
+            {"resource_id": "Magento_Company::user_management", "permission": "deny"},
+        ],
+    },
+    {
+        "id": 3,
+        "role_name": "Purchaser",
+        "permissions": [
+            {"resource_id": "Magento_Company::index", "permission": "allow"},
+            {"resource_id": "Magento_Sales::all", "permission": "allow"},
+            {"resource_id": "Magento_Sales::place_order", "permission": "allow"},
+            {"resource_id": "Magento_Sales::view_orders", "permission": "allow"},
+            {"resource_id": "Magento_PurchaseOrder::all", "permission": "allow"},
+            {"resource_id": "Magento_PurchaseOrder::view_purchase_orders", "permission": "allow"},
+        ],
+    },
+]
 
 
 def load_rest_roles():
-    path = os.path.join(FIXTURES_DIR, "rest_roles_response.json")
-    with open(path) as f:
-        return json.load(f)["items"]
+    return REST_ROLES_ITEMS
 
 
 def sample_entities():

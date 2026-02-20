@@ -7,8 +7,8 @@
 # GraphQL availability.
 #
 # Usage:
-#   bash check-b2b.sh
-#   bash check-b2b.sh /var/www/magento   # specify Magento root
+#   bash validation.sh
+#   bash validation.sh /var/www/magento   # specify Magento root
 # ============================================================
 
 set -euo pipefail
@@ -17,7 +17,7 @@ MAGENTO_ROOT="${1:-.}"
 
 if [ ! -f "$MAGENTO_ROOT/bin/magento" ]; then
     echo "ERROR: bin/magento not found in $MAGENTO_ROOT"
-    echo "Usage: bash check-b2b.sh /path/to/magento"
+    echo "Usage: bash validation.sh /path/to/magento"
     exit 1
 fi
 

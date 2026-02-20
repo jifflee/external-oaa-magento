@@ -14,6 +14,7 @@ cp .env.template .env
 python run.py               # Extract and save JSON
 python run.py --debug       # Verbose output
 python run.py --no-rest     # Skip REST role supplement
+python run.py --ce-mode     # CE fallback (synthetic B2B from real CE customers)
 ```
 
 ## Prerequisites
@@ -39,6 +40,9 @@ All settings are loaded from `.env` (default: `./.env`). Override with `--env /p
 | `USE_REST_ROLE_SUPPLEMENT` | No | `true` | Fetch per-role ACL permissions via REST |
 | `OUTPUT_DIR` | No | `./output` | Output directory |
 | `OUTPUT_RETENTION_DAYS` | No | `30` | Auto-cleanup old output folders |
+| `CE_MODE` | No | `false` | CE fallback mode (synthetic B2B from real CE customers) |
+| `MAGENTO_ADMIN_USERNAME` | CE mode | -- | Admin username for REST API access |
+| `MAGENTO_ADMIN_PASSWORD` | CE mode | -- | Admin password for REST API access |
 
 ## Pipeline
 
@@ -82,6 +86,7 @@ on-prem-graphql/
     entity_extractor.py           Parse GraphQL response into entities
     application_builder.py        Build OAA structure
     relationship_builder.py       Wire entity relationships
+    ce_data_builder.py            CE fallback: synthetic B2B from real CE customers
   tests/
     test_entity_extractor.py      Entity parsing tests
     test_application_builder.py   OAA builder tests

@@ -1,24 +1,92 @@
 """Tests for core.entity_extractor."""
 
-import json
-import os
 import pytest
 
 from core.entity_extractor import EntityExtractor, decode_graphql_id
 
-FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 
-
-def load_graphql_fixture():
-    fixture_path = os.path.join(FIXTURES_DIR, "graphql_response.json")
-    with open(fixture_path) as f:
-        raw = json.load(f)
-    return raw["data"]
+GRAPHQL_RESPONSE = {
+    "customer": {
+        "email": "admin@acme.com",
+        "firstname": "John",
+        "lastname": "Admin",
+    },
+    "company": {
+        "id": "MQ==",
+        "name": "Acme Corp",
+        "legal_name": "Acme Corporation LLC",
+        "email": "info@acme.com",
+        "company_admin": {
+            "email": "admin@acme.com",
+            "firstname": "John",
+            "lastname": "Admin",
+        },
+        "structure": {
+            "items": [
+                {
+                    "id": "MQ==",
+                    "parent_id": "",
+                    "entity": {
+                        "__typename": "Customer",
+                        "email": "admin@acme.com",
+                        "firstname": "John",
+                        "lastname": "Admin",
+                        "job_title": "CEO",
+                        "telephone": "555-0001",
+                        "status": "ACTIVE",
+                        "role": {"id": "MQ==", "name": "Company Administrator"},
+                        "team": None,
+                    },
+                },
+                {
+                    "id": "Mg==",
+                    "parent_id": "MQ==",
+                    "entity": {
+                        "__typename": "CompanyTeam",
+                        "id": "MQ==",
+                        "name": "Engineering",
+                        "description": "Engineering team",
+                    },
+                },
+                {
+                    "id": "Mw==",
+                    "parent_id": "Mg==",
+                    "entity": {
+                        "__typename": "Customer",
+                        "email": "jane@acme.com",
+                        "firstname": "Jane",
+                        "lastname": "Developer",
+                        "job_title": "Senior Developer",
+                        "telephone": "555-0002",
+                        "status": "ACTIVE",
+                        "role": {"id": "Mg==", "name": "Default User"},
+                        "team": {"id": "MQ==", "name": "Engineering", "structure_id": "Mg=="},
+                    },
+                },
+                {
+                    "id": "NA==",
+                    "parent_id": "MQ==",
+                    "entity": {
+                        "__typename": "Customer",
+                        "email": "bob@acme.com",
+                        "firstname": "Bob",
+                        "lastname": "Buyer",
+                        "job_title": "Procurement",
+                        "telephone": "555-0003",
+                        "status": "INACTIVE",
+                        "role": {"id": "Mw==", "name": "Purchaser"},
+                        "team": None,
+                    },
+                },
+            ]
+        },
+    },
+}
 
 
 @pytest.fixture
 def graphql_data():
-    return load_graphql_fixture()
+    return GRAPHQL_RESPONSE
 
 
 @pytest.fixture
