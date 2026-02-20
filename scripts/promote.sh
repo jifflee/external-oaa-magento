@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 #
-# promote.sh — Automate branch promotions for dev → qa → main
+# promote.sh — Automate branch promotions for dev → qa → main → external
 #
 # Usage:
 #   ./scripts/promote.sh dev-to-qa    Merge dev into qa, stripping dev-only files
 #   ./scripts/promote.sh qa-to-main   Merge qa into main, stripping qa-only files
+#   ./scripts/promote.sh publish      Push main to external-oaa-magento
 #
 set -euo pipefail
 
@@ -130,6 +131,28 @@ promote_qa_to_main() {
 }
 
 # ---------------------------------------------------------------------------
+# Publish: main → external repo
+# ---------------------------------------------------------------------------
+publish() {
+    local remote="external"
+
+    require_clean_tree
+
+    # Verify we're pushing main
+    info "Publishing main → $remote (external-oaa-magento)"
+
+    # Verify the remote exists
+    if ! git remote get-url "$remote" > /dev/null 2>&1; then
+        die "Remote '$remote' not configured. Run: git remote add external <url>"
+    fi
+
+    # Push main to external
+    git push "$remote" main
+
+    info "Done. main pushed to $(git remote get-url "$remote")"
+}
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 case "${1:-}" in
@@ -139,11 +162,15 @@ case "${1:-}" in
     qa-to-main)
         promote_qa_to_main
         ;;
+    publish)
+        publish
+        ;;
     *)
-        echo "Usage: $0 {dev-to-qa|qa-to-main}"
+        echo "Usage: $0 {dev-to-qa|qa-to-main|publish}"
         echo ""
         echo "  dev-to-qa   Merge dev into qa, strip dev-only files"
         echo "  qa-to-main  Merge qa into main, strip qa-only files"
+        echo "  publish     Push main to external-oaa-magento"
         exit 1
         ;;
 esac
