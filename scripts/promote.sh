@@ -40,8 +40,10 @@ strip_paths() {
         # Expand pattern — could be a file or directory
         if [[ -e "$REPO_ROOT/$pattern" ]]; then
             info "  Removing: $pattern"
-            git rm -rf --quiet "$pattern"
+            git rm -rf --quiet "$pattern" 2>/dev/null || true
             ((removed++)) || true
+        else
+            info "  Skipping (not found): $pattern"
         fi
     done < <(read_exclude_file "$exclude_file")
 

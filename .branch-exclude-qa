@@ -7,9 +7,15 @@ reference/
 ARCHITECTURE.md
 connectors/on-prem-graphql/extract_ce.py
 connectors/on-prem-graphql/CE_VS_B2B.md
-connectors/on-prem-graphql/ce_data/
-connectors/on-prem-graphql/core/ce_extractor.py
 connectors/on-prem-rest/
+connectors/README.md
+connectors/on-prem-graphql/tests/fixtures/.gitkeep
+shared/magento_oaa_shared/preflight_checker.py
+shared/magento_oaa_shared/provider_registry.py
+shared/magento_oaa_shared/push_helper.py
+shared/magento_oaa_shared/veza_client.py
+shared/tests/test_preflight_checker.py
+shared/tests/test_push_helper.py
 scripts/
 .branch-exclude-qa
 .branch-exclude-main
