@@ -1,0 +1,3 @@
+# Files/directories to strip when promoting qa → main
+# Currently qa and main have the same files, so nothing to strip.
+# Add paths here if qa gains test tooling that shouldn't go to production.

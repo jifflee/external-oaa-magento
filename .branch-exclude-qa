@@ -1,0 +1,15 @@
+# Files/directories to strip when promoting dev → qa
+# These are dev-only tools that should not appear in staging or production.
+
+deployment/
+backlog/
+reference/
+ARCHITECTURE.md
+connectors/on-prem-graphql/extract_ce.py
+connectors/on-prem-graphql/CE_VS_B2B.md
+connectors/on-prem-graphql/ce_data/
+connectors/on-prem-graphql/core/ce_extractor.py
+connectors/on-prem-rest/
+scripts/
+.branch-exclude-qa
+.branch-exclude-main
