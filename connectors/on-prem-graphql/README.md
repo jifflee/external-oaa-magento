@@ -12,8 +12,8 @@ cp .env.template .env
 # Edit .env with your Magento credentials
 
 python run.py               # Extract and save JSON
-python run.py --debug        # Verbose output
-python run.py --no-rest      # Skip REST role supplement
+python run.py --debug       # Verbose output
+python run.py --no-rest     # Skip REST role supplement
 ```
 
 ## Prerequisites
@@ -42,19 +42,19 @@ All settings are loaded from `.env` (default: `./.env`). Override with `--env /p
 
 ## Pipeline
 
-| Step | Action | API Call |
-|------|--------|----------|
-| 1 | Authenticate | `POST /rest/V1/integration/customer/token` |
-| 2 | GraphQL extraction | `POST /graphql` (single `VezaExtraction` query) |
-| 3 | REST role supplement (optional) | `GET /rest/V1/company/role?company_id=X` |
-| 4 | Extract entities | Parse GraphQL response into users, teams, roles, hierarchy |
-| 5 | Build OAA structure | Map entities to OAA CustomApplication format |
-| 6 | Build relationships | Wire user-group, user-role, role-permission links |
-| 7 | Save JSON | Write extracted data to output directory |
+| Step | Module | Action |
+|------|--------|--------|
+| 1 | `magento_client.py` | Authenticate via `POST /rest/V1/integration/customer/token` |
+| 2 | `magento_client.py` | Execute GraphQL `VezaExtraction` query via `POST /graphql` |
+| 3 | `magento_client.py` | (Optional) Fetch per-role ACL permissions via `GET /rest/V1/company/role` |
+| 4 | `entity_extractor.py` | Parse GraphQL response into normalized users, teams, roles, hierarchy |
+| 5 | `application_builder.py` | Map entities to OAA CustomApplication format |
+| 6 | `relationship_builder.py` | Wire user-group, user-role, role-permission, reports-to links |
+| 7 | `orchestrator.py` | Save OAA payload and run metadata as JSON |
 
 ### REST Role Supplement
 
-GraphQL returns role name and ID per user but not the per-role ACL permission tree. The REST supplement calls `GET /rest/V1/company/role` to fetch explicit allow/deny permissions for each role. Only `allow` entries are included in the output. Disable with `USE_REST_ROLE_SUPPLEMENT=false` or `--no-rest`.
+GraphQL returns role name and ID per user but not the per-role ACL permission tree. The REST supplement calls `GET /rest/V1/company/role` to fetch explicit allow/deny permissions for each of the 34 B2B ACL resources. Only `allow` entries are included in the output. Disable with `USE_REST_ROLE_SUPPLEMENT=false` or `--no-rest`.
 
 ## Output
 
@@ -74,7 +74,7 @@ on-prem-graphql/
   requirements.txt                Dependencies (includes shared library)
   .env.template                   Configuration template
   config/
-    settings.py                   Defaults
+    settings.py                   Default settings
   core/
     orchestrator.py               Pipeline coordination (7 steps)
     magento_client.py             REST auth + GraphQL execution
@@ -83,8 +83,8 @@ on-prem-graphql/
     application_builder.py        Build OAA structure
     relationship_builder.py       Wire entity relationships
   tests/
-    test_entity_extractor.py
-    test_application_builder.py
-    test_relationship_builder.py
-    test_orchestrator.py
+    test_entity_extractor.py      Entity parsing tests
+    test_application_builder.py   OAA builder tests
+    test_relationship_builder.py  Relationship wiring tests
+    test_orchestrator.py          Config validation tests
 ```

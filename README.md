@@ -98,7 +98,14 @@ magento/
 ├── connectors/on-prem-graphql/      GraphQL extractor
 │   ├── run.py                       Entry point
 │   ├── .env.template                Configuration template
+│   ├── config/                      Default settings
 │   ├── core/                        Extraction pipeline modules
+│   │   ├── orchestrator.py          Pipeline coordination (7 steps)
+│   │   ├── magento_client.py        REST auth + GraphQL execution
+│   │   ├── graphql_queries.py       GraphQL query definition
+│   │   ├── entity_extractor.py      Parse response into entities
+│   │   ├── application_builder.py   Build OAA structure
+│   │   └── relationship_builder.py  Wire entity relationships
 │   └── tests/                       Unit tests
 ├── shared/                          Common library (magento-oaa-shared)
 │   ├── magento_oaa_shared/          OAA builder, permissions, output management

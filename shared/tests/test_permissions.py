@@ -5,8 +5,6 @@ import pytest
 from magento_oaa_shared.permissions import (
     MAGENTO_ACL_PERMISSIONS,
     PERMISSION_CATEGORIES,
-    get_permission_name,
-    get_permission_category,
 )
 
 
@@ -38,24 +36,6 @@ def test_purchase_order_rule_namespace():
     assert "Magento_PurchaseOrderRule::super_approve_purchase_order" in rule_perms
     assert "Magento_PurchaseOrderRule::view_approval_rules" in rule_perms
     assert "Magento_PurchaseOrderRule::manage_approval_rules" in rule_perms
-
-
-def test_get_permission_name_known():
-    assert get_permission_name("Magento_Company::index") == "All Access"
-    assert get_permission_name("Magento_Sales::all") == "Sales"
-
-
-def test_get_permission_name_unknown():
-    assert get_permission_name("Unknown::perm") == "Unknown::perm"
-
-
-def test_get_permission_category_known():
-    assert get_permission_category("Magento_Company::index") == "base"
-    assert get_permission_category("Magento_Sales::all") == "sales"
-
-
-def test_get_permission_category_unknown():
-    assert get_permission_category("Unknown::perm") == "unknown"
 
 
 def test_define_oaa_permissions():

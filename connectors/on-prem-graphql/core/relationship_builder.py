@@ -1,13 +1,40 @@
 """
-Relationship Builder - Wires up all OAA relationships.
+Relationship Builder — Wires all 6 OAA relationship types between entities.
 
-6 relationship types:
-1. User -> Company (member_of)
-2. User -> Team (member_of)
-3. User -> Role (assigned_role)
-4. Role -> Permission (grants, only 'allow')
-5. Team -> Company (parent_group)
-6. User -> User (reports_to, from hierarchy)
+After the ApplicationBuilder (Step 5) creates the OAA users, groups, and roles,
+this module connects them with the proper relationship links. These relationships
+are what make the extracted data meaningful for authorization analysis.
+
+The 6 relationship types:
+
+  1. User -> Company (group membership)
+     Every user is a member of their company group. This is always set.
+
+  2. User -> Team (group membership)
+     If a user belongs to a team, they are added to that team's group.
+
+  3. User -> Role (role assignment)
+     If a user has a B2B role, they are assigned to it. The role assignment
+     is applied at the application level (apply_to_application=True).
+
+  4. Role -> Permission (permission grants)
+     If REST role supplement data is available, each role gets linked to its
+     allowed ACL permissions. Only "allow" entries are included; "deny" entries
+     are skipped. Without REST data, roles exist but have no permission links.
+
+  5. Team -> Company (group nesting)
+     Teams are nested as sub-groups under the company group, reflecting the
+     organizational hierarchy.
+
+  6. User -> User (reports_to)
+     If the company structure shows a Customer reporting to another Customer,
+     a reports_to property is set on the subordinate user. This only applies
+     to Customer-to-Customer links (not team-to-user or user-to-team).
+
+Pipeline context:
+    Used in Step 6 of the orchestrator pipeline. Takes the CustomApplication
+    from ApplicationBuilder (Step 5), the entities dict from EntityExtractor
+    (Step 4), and optionally the REST role data from MagentoGraphQLClient (Step 3).
 """
 
 from typing import Dict, List, Any, Optional
@@ -17,7 +44,11 @@ from magento_oaa_shared.permissions import MAGENTO_ACL_PERMISSIONS
 
 
 class RelationshipBuilder:
-    """Builds all OAA relationships from extracted entities."""
+    """Builds all OAA relationships from extracted entities.
+
+    Attributes:
+        debug: If True, prints verbose details about relationship construction.
+    """
 
     def __init__(self, debug: bool = False):
         self.debug = debug
@@ -31,9 +62,10 @@ class RelationshipBuilder:
         """Build all 6 relationship types.
 
         Args:
-            app: The CustomApplication to add relationships to
-            entities: Output from EntityExtractor.extract()
-            rest_roles: Optional REST role data with explicit permissions
+            app: The CustomApplication populated by ApplicationBuilder.
+            entities: Output from EntityExtractor.extract().
+            rest_roles: Optional REST role data with explicit permission trees.
+                        If None, role→permission links are skipped.
         """
         company = entities["company"]
         users = entities["users"]
@@ -52,7 +84,7 @@ class RelationshipBuilder:
         # 3. User -> Role
         self._build_user_role(app, users, company["id"])
 
-        # 4. Role -> Permission (from REST supplement or GraphQL permissions tree)
+        # 4. Role -> Permission (from REST supplement or unavailable)
         self._build_role_permissions(app, roles, company["id"], rest_roles)
 
         # 5. Team -> Company
@@ -65,7 +97,13 @@ class RelationshipBuilder:
             print(f"  Relationships built for {len(users)} users, {len(teams)} teams, {len(roles)} roles")
 
     def _build_user_company(self, app: CustomApplication, users: List[Dict], company_unique_id: str):
-        """Relationship 1: User -> Company membership."""
+        """Relationship 1: Add every user to the company group.
+
+        Args:
+            app: The OAA CustomApplication.
+            users: List of normalized user dicts.
+            company_unique_id: The unique_id of the company group (e.g., "company_1").
+        """
         for user in users:
             try:
                 local_user = app.local_users.get(user["email"])
@@ -76,7 +114,12 @@ class RelationshipBuilder:
                     print(f"    Warning: Could not add user {user['email']} to company: {e}")
 
     def _build_user_team(self, app: CustomApplication, users: List[Dict]):
-        """Relationship 2: User -> Team membership."""
+        """Relationship 2: Add users to their team group (if assigned).
+
+        Args:
+            app: The OAA CustomApplication.
+            users: List of normalized user dicts (team_id may be None).
+        """
         for user in users:
             if user.get("team_id"):
                 team_unique_id = f"team_{user['team_id']}"
@@ -89,7 +132,15 @@ class RelationshipBuilder:
                         print(f"    Warning: Could not add user {user['email']} to team: {e}")
 
     def _build_user_role(self, app: CustomApplication, users: List[Dict], company_id: str):
-        """Relationship 3: User -> Role assignment."""
+        """Relationship 3: Assign users to their B2B role.
+
+        The role unique_id follows the format "role_{company_id}_{role_id}".
+
+        Args:
+            app: The OAA CustomApplication.
+            users: List of normalized user dicts (role_id may be None).
+            company_id: The decoded company ID (used in role unique_id).
+        """
         for user in users:
             if user.get("role_id"):
                 role_unique_id = f"role_{company_id}_{user['role_id']}"
@@ -108,18 +159,21 @@ class RelationshipBuilder:
         company_id: str,
         rest_roles: Optional[List[Dict]] = None,
     ):
-        """Relationship 4: Role -> Permission grants.
+        """Relationship 4: Link roles to their allowed ACL permissions.
 
-        If rest_roles provided (from REST supplement), use explicit allow/deny.
-        Otherwise, grant all known permissions to each role.
+        If rest_roles is provided (from the REST supplement in Step 3), each
+        role is linked to its explicitly allowed permissions. If not available,
+        roles exist in the OAA model but have no permission links.
+
+        Args:
+            app: The OAA CustomApplication.
+            roles: List of normalized role dicts from EntityExtractor.
+            company_id: The decoded company ID.
+            rest_roles: Optional list of REST role dicts with permission arrays.
         """
         if rest_roles:
-            # Use REST data: explicit allow/deny per role
             self._build_role_permissions_from_rest(app, rest_roles, company_id)
         else:
-            # Without REST supplement, we don't have explicit permission data.
-            # GraphQL role only gives id+name, not permissions list.
-            # In this case, we create roles but can't link permissions.
             if self.debug:
                 print("    No REST role supplement - role->permission links unavailable")
 
@@ -129,7 +183,17 @@ class RelationshipBuilder:
         rest_roles: List[Dict],
         company_id: str,
     ):
-        """Build role->permission from REST role data with explicit allow/deny."""
+        """Build role->permission links from REST data with explicit allow/deny.
+
+        Only "allow" permissions are linked. "deny" entries are skipped.
+        Only known Magento ACL resource IDs (from the 34-entry catalog) are
+        included; unknown resource IDs are ignored.
+
+        Args:
+            app: The OAA CustomApplication.
+            rest_roles: List of REST role dicts from MagentoGraphQLClient.
+            company_id: The decoded company ID.
+        """
         for rest_role in rest_roles:
             role_id = str(rest_role.get("id", ""))
             role_unique_id = f"role_{company_id}_{role_id}"
@@ -145,7 +209,7 @@ class RelationshipBuilder:
                 resource_id = perm.get("resource_id", "")
                 permission_value = perm.get("permission", "")
 
-                # Only create links for "allow" permissions
+                # Only link "allow" permissions for known ACL resources
                 if permission_value == "allow" and resource_id in MAGENTO_ACL_PERMISSIONS:
                     try:
                         local_role.add_permissions([resource_id])
@@ -158,7 +222,16 @@ class RelationshipBuilder:
                 print(f"    Role {rest_role.get('role_name', role_id)}: {allowed_count} permissions")
 
     def _build_team_company(self, app: CustomApplication, teams: List[Dict], company_unique_id: str):
-        """Relationship 5: Team -> Company parent group."""
+        """Relationship 5: Nest team groups under the company group.
+
+        In the OAA model, groups can contain sub-groups. Each team is added
+        as a child of the company group.
+
+        Args:
+            app: The OAA CustomApplication.
+            teams: List of normalized team dicts.
+            company_unique_id: The unique_id of the company group.
+        """
         company_group = app.local_groups.get(company_unique_id)
         if not company_group:
             return
@@ -168,16 +241,22 @@ class RelationshipBuilder:
             try:
                 team_group = app.local_groups.get(team_unique_id)
                 if team_group:
-                    # In OAA, groups can nest. Add team as sub-group of company.
                     company_group.add_group(team_unique_id)
             except Exception as e:
                 if self.debug:
                     print(f"    Warning: Could not add team {team['id']} to company: {e}")
 
     def _build_reports_to(self, app: CustomApplication, hierarchy: List[Dict]):
-        """Relationship 6: User -> User reports_to from hierarchy.
+        """Relationship 6: Set reports_to property for user→user hierarchy.
 
-        Only creates reports_to when both child and parent are Customer entities.
+        Only creates reports_to when both the child and parent are Customer
+        entities (not CompanyTeam). This reflects the actual reporting
+        structure within the B2B company.
+
+        Args:
+            app: The OAA CustomApplication.
+            hierarchy: Resolved hierarchy from EntityExtractor (list of
+                       {child_type, child_entity, parent_type, parent_entity}).
         """
         for link in hierarchy:
             if link["child_type"] == "Customer" and link["parent_type"] == "Customer":

@@ -1,8 +1,25 @@
 """
-Magento API Client - Handles authentication and API calls.
+Magento API Client — Handles authentication and API calls to Adobe Commerce.
 
-Uses REST for token generation (simpler) and GraphQL for data extraction.
-Optionally supplements with REST role endpoint for explicit allow/deny permissions.
+This module is responsible for all HTTP communication with the Magento store.
+It uses two Magento API surfaces:
+
+  1. REST API — Used for authentication (obtaining a customer JWT token) and
+     optionally for fetching per-role ACL permissions.
+
+  2. GraphQL API — Used for the primary data extraction. A single query
+     retrieves the full B2B company structure in one call.
+
+Authentication flow:
+    POST /rest/V1/integration/customer/token
+    Body: {"username": "company-admin@example.com", "password": "..."}
+    Response: "eyJhbGciOiJIUzI1..."  (JWT token as a JSON string)
+
+    The token is then attached as a Bearer header to all subsequent requests.
+
+Pipeline context:
+    This is used in Step 1 (authentication), Step 2 (GraphQL extraction),
+    and Step 3 (REST role supplement) of the orchestrator pipeline.
 """
 
 import requests
@@ -10,9 +27,27 @@ from typing import Dict, Any, Optional, List
 
 
 class MagentoGraphQLClient:
-    """Client for Magento B2B GraphQL + REST API."""
+    """Client for Magento B2B GraphQL and REST APIs.
+
+    Manages a requests.Session with automatic Bearer token injection after
+    authentication. All API calls go through this single session.
+
+    Attributes:
+        store_url: Base URL of the Magento store (trailing slash stripped).
+        username: Magento customer email (B2B company admin).
+        password: Magento customer password.
+        debug: If True, print verbose request/response details.
+    """
 
     def __init__(self, store_url: str, username: str, password: str, debug: bool = False):
+        """Initialize the client.
+
+        Args:
+            store_url: Base URL (e.g., "https://magento.example.com").
+            username: Customer email address.
+            password: Customer password.
+            debug: Enable verbose output.
+        """
         self.store_url = store_url.rstrip("/")
         self.username = username
         self.password = password
@@ -21,11 +56,17 @@ class MagentoGraphQLClient:
         self._session = requests.Session()
 
     def authenticate(self) -> str:
-        """Get customer token via REST API.
+        """Obtain a customer JWT token via the REST API.
 
-        POST /rest/V1/integration/customer/token
-        Body: {"username": "email", "password": "password"}
-        Returns: token string (JWT)
+        Calls POST /rest/V1/integration/customer/token with username/password.
+        The returned token is stored internally and attached to the session
+        headers for all subsequent requests.
+
+        Returns:
+            The JWT token string.
+
+        Raises:
+            requests.HTTPError: If authentication fails (e.g., 401 Unauthorized).
         """
         url = f"{self.store_url}/rest/V1/integration/customer/token"
         payload = {"username": self.username, "password": self.password}
@@ -36,7 +77,7 @@ class MagentoGraphQLClient:
         response = self._session.post(url, json=payload)
         response.raise_for_status()
 
-        # Response is a JSON string (token wrapped in quotes)
+        # Magento returns the token as a bare JSON string (quoted)
         self._token = response.json()
         self._session.headers.update({"Authorization": f"Bearer {self._token}"})
 
@@ -46,11 +87,22 @@ class MagentoGraphQLClient:
         return self._token
 
     def execute_graphql(self, query: str, variables: Optional[Dict] = None) -> Dict[str, Any]:
-        """Execute a GraphQL query against Magento.
+        """Execute a GraphQL query against the Magento store.
 
-        POST /graphql
-        Headers: Authorization: Bearer {token}, Content-Type: application/json
-        Body: {"query": "...", "variables": {...}}
+        Calls POST /graphql with the given query string. If the response
+        contains a GraphQL "errors" array, raises a RuntimeError with the
+        concatenated error messages.
+
+        Args:
+            query: The GraphQL query string.
+            variables: Optional dict of GraphQL variables.
+
+        Returns:
+            The "data" portion of the GraphQL response (a dict).
+
+        Raises:
+            RuntimeError: If the GraphQL response contains errors.
+            requests.HTTPError: If the HTTP request fails.
         """
         if not self._token:
             self.authenticate()
@@ -80,14 +132,23 @@ class MagentoGraphQLClient:
         return result.get("data", {})
 
     def get_company_roles_rest(self, company_id: str) -> List[Dict]:
-        """Get company roles with explicit permissions via REST.
+        """Fetch company roles with explicit ACL permissions via the REST API.
 
-        GET /rest/V1/company/role?searchCriteria[filter_groups][0][filters][0][field]=company_id
-            &searchCriteria[filter_groups][0][filters][0][value]={company_id}
-            &searchCriteria[filter_groups][0][filters][0][condition_type]=eq
+        Calls GET /rest/V1/company/role with a search filter for the given
+        company_id. Each returned role includes a "permissions" array with
+        entries like: {"resource_id": "Magento_Sales::place_order", "permission": "allow"}
 
-        Returns list of roles with permissions array containing:
-        [{"resource_id": "Magento_Sales::place_order", "permission": "allow"}, ...]
+        This supplements the GraphQL data, which only returns role id and name
+        per user but not the per-role permission tree.
+
+        Args:
+            company_id: The numeric Magento company ID (decoded from GraphQL base64).
+
+        Returns:
+            A list of role dicts, each with "id", "role_name", and "permissions" keys.
+
+        Raises:
+            requests.HTTPError: If the REST call fails (e.g., 404 on CE without B2B).
         """
         if not self._token:
             self.authenticate()
@@ -117,4 +178,5 @@ class MagentoGraphQLClient:
 
     @property
     def token(self) -> Optional[str]:
+        """The current JWT token, or None if not yet authenticated."""
         return self._token

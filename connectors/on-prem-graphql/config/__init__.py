@@ -1,1 +1,3 @@
-from .settings import DEFAULT_SETTINGS, PROXY_ENV_VARS
+"""Config package — re-exports DEFAULT_SETTINGS for use by the orchestrator."""
+
+from .settings import DEFAULT_SETTINGS
