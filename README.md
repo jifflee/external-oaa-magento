@@ -22,7 +22,18 @@ python run.py
 
 ## Validation
 
-Before running the extractor, verify the target Magento instance has B2B support. Copy `validation.sh` to the Magento server and run it from the Magento root directory:
+Two validation options depending on access level:
+
+**Option A: Remote validation (recommended)** — run from your local machine against the instance URL:
+
+```bash
+cd deployment/test
+./validate-instance.sh    # prompts for URL + credentials, or set env vars
+```
+
+This runs 5 stages over the network: connectivity, authentication, B2B module check, full GraphQL query test, and REST permission check. No server access needed.
+
+**Option B: Server-side validation** — run directly on the Magento server:
 
 ```bash
 bash validation.sh                    # run from Magento root
@@ -95,7 +106,7 @@ All settings are loaded from `.env`. See `.env.template` for the full list.
 ```
 magento/
 ├── validation.sh                    B2B capability check (run on Magento server)
-├── connectors/on-prem-graphql/      GraphQL extractor
+├── connectors/on-prem-graphql/      GraphQL extractor (full OAA pipeline)
 │   ├── run.py                       Entry point
 │   ├── .env.template                Configuration template
 │   ├── config/                      Default settings
@@ -110,6 +121,12 @@ magento/
 ├── shared/                          Common library (magento-oaa-shared)
 │   ├── magento_oaa_shared/          OAA builder, permissions, output management
 │   └── tests/                       Unit tests
+├── deployment/
+│   ├── test/
+│   │   ├── validate-instance.sh     5-stage instance validation
+│   │   ├── run-extraction.sh        Lightweight 50-record B2B extraction
+│   │   └── output/                  Timestamped extraction output (gitignored)
+│   └── ...                          AWS EC2 test environment scripts
 └── README.md
 ```
 
