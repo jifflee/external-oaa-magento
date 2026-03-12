@@ -22,18 +22,7 @@ python run.py
 
 ## Validation
 
-Two validation options depending on access level:
-
-**Option A: Remote validation (recommended)** — run from your local machine against the instance URL:
-
-```bash
-cd deployment/test
-./validate-instance.sh    # prompts for URL + credentials, or set env vars
-```
-
-This runs 5 stages over the network: connectivity, authentication, B2B module check, full GraphQL query test, and REST permission check. No server access needed.
-
-**Option B: Server-side validation** — run directly on the Magento server:
+Verify the target Magento instance has B2B support before running the extractor. Copy `validation.sh` to the Magento server and run it from the Magento root directory:
 
 ```bash
 bash validation.sh                    # run from Magento root
@@ -41,6 +30,8 @@ bash validation.sh /var/www/magento   # specify Magento root path
 ```
 
 This checks edition, hosting type, B2B module status, GraphQL availability, and outputs a readiness summary.
+
+> **Remote validation and sample extraction scripts** (validate-instance, run-extraction) are available on the `dev` branch under `deployment/test/`. These support cross-platform use (bash + Python) and do not require server access. See the dev branch README for details.
 
 ## Prerequisites
 
@@ -131,15 +122,10 @@ magento/
 ├── shared/                          Common library (magento-oaa-shared)
 │   ├── magento_oaa_shared/          OAA builder, permissions, output management
 │   └── tests/                       Unit tests
-├── deployment/                      (dev branch only)
-│   ├── test/
-│   │   ├── validate-instance.sh     5-stage remote instance validation (bash)
-│   │   ├── validate_instance.py     5-stage remote instance validation (Python)
-│   │   ├── run-extraction.sh        50-record B2B extraction (bash)
-│   │   └── run_extraction.py        50-record B2B extraction (Python)
-│   └── ...                          AWS EC2 test environment scripts
 └── README.md
 ```
+
+> Additional dev tooling (deployment scripts, remote validation, sample extraction, REST connector, architecture docs) is available on the `dev` branch.
 
 ## Running Tests
 
@@ -151,29 +137,96 @@ cd shared && pytest tests/
 cd connectors/on-prem-graphql && pytest tests/
 ```
 
-## Development & Release Workflow
+## QA Branch Requirements
 
-> **This section is only visible on the `dev` branch of `source-oaa-magento`.**
+This branch is the staging gate between active development (`dev`) and production release (`main`). Nothing reaches `main` without passing through `qa` first.
 
-This project uses a two-repo, three-branch strategy:
+### What belongs on qa/main
 
-```
-source-oaa-magento (private)              external-oaa-magento (public)
-  dev ──→ qa ──→ main ──── publish ────→    main
-```
+Only production-ready code ships on qa and main:
 
-| Branch | Purpose |
-|--------|---------|
-| `dev` | Active development. All code + dev tools. |
-| `qa` | Staging. Production code only, dev tools stripped. |
-| `main` | Releases. Pushed to external repo. VERSION bump triggers auto-release. |
+- **GraphQL connector** — the full 7-step extraction pipeline (`connectors/on-prem-graphql/`)
+- **Shared library** — OAA builder, permissions, output manager (`shared/magento_oaa_shared/`)
+- **Unit tests** — all tests that validate the above modules
+- **Configuration templates** — `.env.template` with placeholder values only
+- **Example output** — `oaa_payload_sample.json` with fictional data (`@acmecorp.example.com`)
+- **User-facing docs** — `README.md`, `LICENSE`, `validation.sh`
+- **CI/CD** — `.github/workflows/release.yml`
 
-Promotions are automated via `scripts/promote.sh`:
+### What is stripped during dev-to-qa promotion
+
+The following are removed automatically by `scripts/promote.sh dev-to-qa` (defined in `.branch-exclude-qa` on dev):
+
+| Path | Reason |
+|------|--------|
+| `deployment/` | AWS test environment, validation/extraction scripts |
+| `backlog/` | Cloud connectors (not yet production) |
+| `reference/` | Legacy connectors, API docs |
+| `scripts/` | Dev tooling (promote.sh) |
+| `ARCHITECTURE.md`, `CONTRIBUTING.md` | Internal dev documentation |
+| `connectors/on-prem-rest/` | REST connector (fallback, not production) |
+| `connectors/README.md` | Multi-connector overview (only GraphQL ships) |
+| `connectors/on-prem-graphql/extract_ce.py` | CE fallback extraction script |
+| `connectors/on-prem-graphql/CE_VS_B2B.md` | CE vs B2B comparison doc |
+| `connectors/on-prem-graphql/tests/fixtures/` | Test fixture JSON files |
+| `shared/magento_oaa_shared/preflight_checker.py` | Not yet production-ready |
+| `shared/magento_oaa_shared/provider_registry.py` | Not yet production-ready |
+| `shared/magento_oaa_shared/push_helper.py` | Not yet production-ready |
+| `shared/magento_oaa_shared/veza_client.py` | Not yet production-ready |
+| `shared/tests/test_preflight_checker.py` | Tests for stripped module |
+| `shared/tests/test_push_helper.py` | Tests for stripped module |
+| `.branch-exclude-qa`, `.branch-exclude-main` | Exclude rules themselves |
+
+### QA checklist (before promoting qa to main)
+
+**1. No secrets or real credentials**
+- [ ] No hardcoded passwords, API keys, tokens, or JWT strings
+- [ ] `.env.template` uses only placeholder values (`your-password`, `example.com`)
+- [ ] Test files use only mock/fictional credentials (`"secret"`, `@example.com`)
+
+**2. No internal infrastructure references**
+- [ ] No AWS account IDs, instance IDs, S3 bucket names
+- [ ] No SSO URLs, IAM roles, or deployment-specific configuration
+- [ ] No real IP addresses or internal hostnames
+
+**3. No real customer data**
+- [ ] Sample data uses fictional names and `@example.com` domains only
+- [ ] No real email addresses, phone numbers, or company names
+- [ ] `oaa_payload_sample.json` contains only synthetic data
+
+**4. No dev-only files leaked**
+- [ ] None of the paths listed in the stripping table above exist
+- [ ] Verify: `git ls-files | grep -E '^(deployment/|backlog/|reference/|scripts/|ARCHITECTURE|CONTRIBUTING|\.branch-exclude)'`
+
+**5. README accuracy**
+- [ ] README does not reference files/directories that don't exist on this branch
+- [ ] Repository structure section matches actual tracked files
+
+**6. Tests pass**
+- [ ] `cd shared && pytest tests/` — all pass
+- [ ] `cd connectors/on-prem-graphql && pytest tests/` — all pass
+
+**7. Version**
+- [ ] `VERSION` file reflects the intended release version
+- [ ] Version bump is intentional (triggers auto-release on main via CI)
+
+### Promoting to main
 
 ```bash
-./scripts/promote.sh dev-to-qa      # merge + strip dev-only files
+# From dev branch:
 ./scripts/promote.sh qa-to-main     # merge qa into main
-./scripts/promote.sh publish         # push main + metadata to external repo
+./scripts/promote.sh publish         # push main to external repo (triggers release)
 ```
 
-See **[CONTRIBUTING.md](CONTRIBUTING.md)** for the full SDLC documentation, branch details, file stripping rules, remote setup, and troubleshooting.
+### Merge conflict handling
+
+When promoting dev-to-qa, conflicts commonly occur on files that were deleted on qa (by stripping) but modified on dev. Resolution:
+
+1. Accept the dev version (`git add <file>`)
+2. Complete the merge (`git commit --no-edit`)
+3. Re-run the strip for all excluded paths
+4. Commit the strip (`git commit -m "Strip dev-only files from qa"`)
+
+## License
+
+See [LICENSE](LICENSE).
