@@ -11,8 +11,15 @@ The query extracts:
     each tagged with __typename (Customer or CompanyTeam) and linked by
     parent_id for hierarchy reconstruction
 
-Customer fields extracted:
-  - email, firstname, lastname, job_title, telephone, status
+Customer (top-level) fields extracted:
+  - email, firstname, lastname
+
+Company fields extracted:
+  - id, name, legal_name, email, company_admin
+  - legal_address: {street, city, region, postcode, country_code, telephone}
+
+Customer (structure) fields extracted:
+  - email, firstname, lastname, job_title, telephone, status, created_at
   - role: {id, name} — the B2B role assigned to this user
   - team: {id, name, structure_id} — the team this user belongs to
 
@@ -48,6 +55,16 @@ query VezaExtraction {
       firstname
       lastname
     }
+    legal_address {
+      street
+      city
+      region {
+        region_code
+      }
+      postcode
+      country_code
+      telephone
+    }
     structure {
       items {
         id
@@ -61,6 +78,7 @@ query VezaExtraction {
             job_title
             telephone
             status
+            created_at
             role {
               id
               name

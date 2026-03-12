@@ -56,8 +56,8 @@ The extractor authenticates as a B2B company admin, runs a single GraphQL query 
 
 | Magento Entity | Description |
 |----------------|-------------|
-| Company | B2B organizational entity (name, legal name, admin) |
-| Users | Company members (email, name, job title, status, active/inactive) |
+| Company | B2B organizational entity (name, legal name, admin, legal address) |
+| Users | Company members (email, name, job title, telephone, status, created_at, active/inactive) |
 | Teams | Groups within a company |
 | Roles | Named permission sets (e.g., "Buyer", "Manager") |
 | ACL Permissions | 34 granular B2B permissions across sales, quotes, purchase orders, company management |

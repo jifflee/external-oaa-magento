@@ -17,10 +17,13 @@ provides the connector-specific naming constants (app_name_prefix, application_t
 
 OAA property schemas defined:
   Application: store_url, sync_timestamp, company_name
-  User:        job_title, telephone, is_company_admin, magento_customer_id,
-               company_id, reports_to
+  User:        job_title, telephone, created_at, is_company_admin,
+               magento_customer_id, company_id, reports_to
   Group:       legal_name, company_email, admin_email, magento_company_id,
-               description, magento_team_id, parent_company_id
+               legal_address_street, legal_address_city, legal_address_region,
+               legal_address_postcode, legal_address_country,
+               legal_address_telephone, description, magento_team_id,
+               parent_company_id
   Role:        magento_role_id, company_id
 
 Pipeline context:
@@ -141,6 +144,7 @@ class BaseApplicationBuilder:
         # User properties
         app.property_definitions.define_local_user_property("job_title", OAAPropertyType.STRING)
         app.property_definitions.define_local_user_property("telephone", OAAPropertyType.STRING)
+        app.property_definitions.define_local_user_property("created_at", OAAPropertyType.STRING)
         app.property_definitions.define_local_user_property("is_company_admin", OAAPropertyType.BOOLEAN)
         app.property_definitions.define_local_user_property("magento_customer_id", OAAPropertyType.STRING)
         app.property_definitions.define_local_user_property("company_id", OAAPropertyType.STRING)
@@ -151,6 +155,12 @@ class BaseApplicationBuilder:
         app.property_definitions.define_local_group_property("company_email", OAAPropertyType.STRING)
         app.property_definitions.define_local_group_property("admin_email", OAAPropertyType.STRING)
         app.property_definitions.define_local_group_property("magento_company_id", OAAPropertyType.STRING)
+        app.property_definitions.define_local_group_property("legal_address_street", OAAPropertyType.STRING)
+        app.property_definitions.define_local_group_property("legal_address_city", OAAPropertyType.STRING)
+        app.property_definitions.define_local_group_property("legal_address_region", OAAPropertyType.STRING)
+        app.property_definitions.define_local_group_property("legal_address_postcode", OAAPropertyType.STRING)
+        app.property_definitions.define_local_group_property("legal_address_country", OAAPropertyType.STRING)
+        app.property_definitions.define_local_group_property("legal_address_telephone", OAAPropertyType.STRING)
         app.property_definitions.define_local_group_property("description", OAAPropertyType.STRING)
         app.property_definitions.define_local_group_property("magento_team_id", OAAPropertyType.STRING)
         app.property_definitions.define_local_group_property("parent_company_id", OAAPropertyType.STRING)
@@ -173,6 +183,17 @@ class BaseApplicationBuilder:
         group.set_property("company_email", company.get("email", ""))
         group.set_property("admin_email", company.get("admin_email", ""))
         group.set_property("magento_company_id", company["id"])
+
+        # Legal address (flattened from nested dict)
+        legal_addr = company.get("legal_address", {})
+        if legal_addr:
+            street = legal_addr.get("street", [])
+            group.set_property("legal_address_street", ", ".join(street) if isinstance(street, list) else str(street))
+            group.set_property("legal_address_city", legal_addr.get("city", ""))
+            group.set_property("legal_address_region", legal_addr.get("region_code", ""))
+            group.set_property("legal_address_postcode", legal_addr.get("postcode", ""))
+            group.set_property("legal_address_country", legal_addr.get("country_code", ""))
+            group.set_property("legal_address_telephone", legal_addr.get("telephone", ""))
 
     def _add_team_group(self, app: CustomApplication, team: Dict):
         """Add a team as a local group with type="team".
@@ -225,6 +246,8 @@ class BaseApplicationBuilder:
             local_user.set_property("job_title", user["job_title"])
         if user.get("telephone"):
             local_user.set_property("telephone", user["telephone"])
+        if user.get("created_at"):
+            local_user.set_property("created_at", user["created_at"])
         local_user.set_property("is_company_admin", user.get("is_company_admin", False))
         local_user.set_property("company_id", user.get("company_id", ""))
         if user.get("magento_customer_id"):
