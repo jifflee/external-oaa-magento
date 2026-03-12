@@ -176,8 +176,9 @@ def main():
     extraction_query = (
         "query VezaExtraction { customer { email firstname lastname } "
         "company { id name legal_name email company_admin { email firstname lastname } "
+        "legal_address { street city region { region_code } postcode country_code telephone } "
         "structure { items { id parent_id entity { __typename "
-        "... on Customer { email firstname lastname job_title telephone status "
+        "... on Customer { email firstname lastname job_title telephone status created_at "
         "role { id name } team { id name structure_id } } "
         "... on CompanyTeam { id name description } } } } } }"
     )
@@ -212,6 +213,7 @@ def main():
         "legal_name": company_data.get("legal_name"),
         "email": company_data.get("email"),
         "company_admin": company_data.get("company_admin"),
+        "legal_address": company_data.get("legal_address"),
     }
     save_json(output_dir / "company.json", company_out)
     company_name = company_out["name"] or "unknown"
@@ -234,6 +236,7 @@ def main():
                 "job_title": entity.get("job_title"),
                 "telephone": entity.get("telephone"),
                 "status": entity.get("status"),
+                "created_at": entity.get("created_at"),
                 "role_id": (entity.get("role") or {}).get("id"),
                 "role_name": (entity.get("role") or {}).get("name"),
                 "team_id": (entity.get("team") or {}).get("id"),

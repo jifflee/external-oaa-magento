@@ -175,10 +175,14 @@ class EntityExtractor:
             company_data: The "company" portion of the GraphQL response.
 
         Returns:
-            A normalized dict with id, name, legal_name, email, admin_*, graphql_id.
+            A normalized dict with id, name, legal_name, email, admin_*,
+            legal_address, graphql_id.
         """
         company_id = decode_graphql_id(company_data.get("id", ""))
         admin = company_data.get("company_admin", {})
+        legal_addr = company_data.get("legal_address") or {}
+        region = legal_addr.get("region") or {}
+
         return {
             "id": company_id,
             "name": company_data.get("name", ""),
@@ -188,6 +192,14 @@ class EntityExtractor:
             "admin_firstname": admin.get("firstname", ""),
             "admin_lastname": admin.get("lastname", ""),
             "graphql_id": company_data.get("id", ""),
+            "legal_address": {
+                "street": legal_addr.get("street", []),
+                "city": legal_addr.get("city", ""),
+                "region_code": region.get("region_code", ""),
+                "postcode": legal_addr.get("postcode", ""),
+                "country_code": legal_addr.get("country_code", ""),
+                "telephone": legal_addr.get("telephone", ""),
+            },
         }
 
     def _extract_user(self, entity: Dict, company_id: str, admin_email: str) -> Dict:
@@ -224,6 +236,7 @@ class EntityExtractor:
             "lastname": entity.get("lastname", ""),
             "job_title": entity.get("job_title", ""),
             "telephone": entity.get("telephone", ""),
+            "created_at": entity.get("created_at", ""),
             "is_active": status == "ACTIVE" if status else True,
             "status_raw": status,
             "is_company_admin": email.lower() == admin_email.lower() if admin_email else False,

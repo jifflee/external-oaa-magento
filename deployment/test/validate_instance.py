@@ -263,8 +263,9 @@ def main():
     extraction_query = (
         "query VezaExtraction { customer { email firstname lastname } "
         "company { id name legal_name email company_admin { email firstname lastname } "
+        "legal_address { street city region { region_code } postcode country_code telephone } "
         "structure { items { id parent_id entity { __typename "
-        "... on Customer { email firstname lastname job_title telephone status "
+        "... on Customer { email firstname lastname job_title telephone status created_at "
         "role { id name } team { id name structure_id } } "
         "... on CompanyTeam { id name description } } } } } }"
     )

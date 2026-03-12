@@ -11,6 +11,7 @@
         "local_user_properties": {
           "job_title": "STRING",
           "telephone": "STRING",
+          "created_at": "STRING",
           "is_company_admin": "BOOLEAN",
           "magento_customer_id": "STRING",
           "company_id": "STRING",
@@ -21,6 +22,12 @@
           "company_email": "STRING",
           "admin_email": "STRING",
           "magento_company_id": "STRING",
+          "legal_address_street": "STRING",
+          "legal_address_city": "STRING",
+          "legal_address_region": "STRING",
+          "legal_address_postcode": "STRING",
+          "legal_address_country": "STRING",
+          "legal_address_telephone": "STRING",
           "description": "STRING",
           "magento_team_id": "STRING",
           "parent_company_id": "STRING"
@@ -51,6 +58,7 @@
           "custom_properties": {
             "job_title": "CEO",
             "telephone": "415-555-0001",
+            "created_at": "2024-01-15 10:30:00",
             "is_company_admin": true,
             "company_id": "1"
           },
@@ -70,6 +78,7 @@
           "custom_properties": {
             "job_title": "VP of Sales",
             "telephone": "415-555-0002",
+            "created_at": "2024-02-01 09:15:00",
             "is_company_admin": false,
             "company_id": "1"
           },
@@ -89,6 +98,7 @@
           "custom_properties": {
             "job_title": "Senior Buyer",
             "telephone": "415-555-0003",
+            "created_at": "2024-03-10 11:00:00",
             "is_company_admin": false,
             "company_id": "1",
             "reports_to": "sarah.chen@acmecorp.example.com"
@@ -109,6 +119,7 @@
           "custom_properties": {
             "job_title": "Sales Analyst",
             "telephone": "415-555-0004",
+            "created_at": "2024-04-05 08:30:00",
             "is_company_admin": false,
             "company_id": "1",
             "reports_to": "sarah.chen@acmecorp.example.com"
@@ -129,6 +140,7 @@
           "custom_properties": {
             "job_title": "Operations Director",
             "telephone": "415-555-0005",
+            "created_at": "2024-05-20 16:45:00",
             "is_company_admin": false,
             "company_id": "1"
           },
@@ -146,7 +158,13 @@
             "legal_name": "Acme Corporation LLC",
             "company_email": "info@acmecorp.example.com",
             "admin_email": "john.doe@acmecorp.example.com",
-            "magento_company_id": "1"
+            "magento_company_id": "1",
+            "legal_address_street": "123 Commerce Blvd, Suite 400",
+            "legal_address_city": "San Francisco",
+            "legal_address_region": "CA",
+            "legal_address_postcode": "94105",
+            "legal_address_country": "US",
+            "legal_address_telephone": "415-555-0000"
           },
           "id": "company_1"
         },

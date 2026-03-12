@@ -154,7 +154,7 @@ echo ""
 echo "Step 2/5: Extracting company structure (GraphQL)"
 echo "---"
 
-EXTRACTION_QUERY='query VezaExtraction { customer { email firstname lastname } company { id name legal_name email company_admin { email firstname lastname } structure { items { id parent_id entity { __typename ... on Customer { email firstname lastname job_title telephone status role { id name } team { id name structure_id } } ... on CompanyTeam { id name description } } } } } }'
+EXTRACTION_QUERY='query VezaExtraction { customer { email firstname lastname } company { id name legal_name email company_admin { email firstname lastname } legal_address { street city region { region_code } postcode country_code telephone } structure { items { id parent_id entity { __typename ... on Customer { email firstname lastname job_title telephone status created_at role { id name } team { id name structure_id } } ... on CompanyTeam { id name description } } } } } }'
 
 # Use jq to safely build the JSON payload (avoids query string escaping issues)
 GQL_PAYLOAD=$(jq -n --arg q "$EXTRACTION_QUERY" '{query: $q}')
@@ -177,11 +177,12 @@ fi
 
 # -- Save company.json --------------------------------------------------------
 echo "$GQL_RESPONSE" | jq '{
-  id:           .data.company.id,
-  name:         .data.company.name,
-  legal_name:   .data.company.legal_name,
-  email:        .data.company.email,
-  company_admin: .data.company.company_admin
+  id:            .data.company.id,
+  name:          .data.company.name,
+  legal_name:    .data.company.legal_name,
+  email:         .data.company.email,
+  company_admin: .data.company.company_admin,
+  legal_address: .data.company.legal_address
 }' > "${OUTPUT_DIR}/company.json"
 
 COMPANY_NAME=$(jq -r '.name' "${OUTPUT_DIR}/company.json")
@@ -206,6 +207,7 @@ echo "$GQL_RESPONSE" | jq --argjson limit "$PAGE_SIZE" '[
       job_title:    .entity.job_title,
       telephone:    .entity.telephone,
       status:       .entity.status,
+      created_at:   .entity.created_at,
       role_id:      .entity.role.id,
       role_name:    .entity.role.name,
       team_id:      .entity.team.id,

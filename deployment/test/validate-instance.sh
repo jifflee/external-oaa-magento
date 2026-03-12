@@ -273,7 +273,7 @@ echo "---"
 
 # The exact FULL_EXTRACTION_QUERY from connectors/on-prem-graphql/core/graphql_queries.py
 # Built as a JSON payload via jq to avoid escaping issues.
-EXTRACTION_QUERY='query VezaExtraction { customer { email firstname lastname } company { id name legal_name email company_admin { email firstname lastname } structure { items { id parent_id entity { __typename ... on Customer { email firstname lastname job_title telephone status role { id name } team { id name structure_id } } ... on CompanyTeam { id name description } } } } } }'
+EXTRACTION_QUERY='query VezaExtraction { customer { email firstname lastname } company { id name legal_name email company_admin { email firstname lastname } legal_address { street city region { region_code } postcode country_code telephone } structure { items { id parent_id entity { __typename ... on Customer { email firstname lastname job_title telephone status created_at role { id name } team { id name structure_id } } ... on CompanyTeam { id name description } } } } } }'
 
 GQL_FULL_RESPONSE=$(curl_or_fail "GraphQL Extraction" \
   -sf -X POST "${MAGENTO_URL}/graphql" \

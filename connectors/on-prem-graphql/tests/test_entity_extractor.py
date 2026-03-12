@@ -140,3 +140,20 @@ def test_extract_hierarchy_customer_to_customer_link(entities):
 
 def test_extract_admin_email(entities):
     assert entities["admin_email"] == "admin@acme.com"
+
+
+def test_extract_company_legal_address(entities):
+    addr = entities["company"]["legal_address"]
+    assert addr["street"] == ["123 Main St", "Suite 100"]
+    assert addr["city"] == "Austin"
+    assert addr["region_code"] == "TX"
+    assert addr["postcode"] == "78701"
+    assert addr["country_code"] == "US"
+    assert addr["telephone"] == "555-0000"
+
+
+def test_extract_user_created_at(entities):
+    users_by_email = {u["email"]: u for u in entities["users"]}
+    assert users_by_email["admin@acme.com"]["created_at"] == "2024-01-15 10:30:00"
+    assert users_by_email["jane@acme.com"]["created_at"] == "2024-02-10 09:00:00"
+    assert users_by_email["bob@acme.com"]["created_at"] == "2024-03-01 14:00:00"
