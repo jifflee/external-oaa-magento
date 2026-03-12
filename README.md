@@ -95,11 +95,19 @@ output/YYYYMMDD_HHMM_Magento_OnPrem_GraphQL/
 
 All settings are loaded from `.env`. See `.env.template` for the full list.
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `MAGENTO_STORE_URL` | Yes | Base URL of the Magento store |
-| `MAGENTO_USERNAME` | Yes | Company admin email |
-| `MAGENTO_PASSWORD` | Yes | Company admin password |
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `MAGENTO_STORE_URL` | Yes | -- | Base URL of the Magento store |
+| `MAGENTO_USERNAME` | Yes | -- | Company admin email |
+| `MAGENTO_PASSWORD` | Yes | -- | Company admin password |
+| `SAVE_JSON` | No | `true` | Save extracted data as JSON |
+| `DEBUG` | No | `false` | Verbose output |
+| `USE_REST_ROLE_SUPPLEMENT` | No | `true` | Fetch per-role ACL permissions via REST |
+| `OUTPUT_DIR` | No | `./output` | Output directory |
+| `OUTPUT_RETENTION_DAYS` | No | `30` | Auto-cleanup old output folders |
+| `CE_MODE` | No | `false` | CE fallback mode (synthetic B2B from real CE customers) |
+| `MAGENTO_ADMIN_USERNAME` | CE mode | -- | Admin username for REST API access |
+| `MAGENTO_ADMIN_PASSWORD` | CE mode | -- | Admin password for REST API access |
 
 ## Repository Structure
 
@@ -116,16 +124,19 @@ magento/
 │   │   ├── graphql_queries.py       GraphQL query definition
 │   │   ├── entity_extractor.py      Parse response into entities
 │   │   ├── application_builder.py   Build OAA structure
-│   │   └── relationship_builder.py  Wire entity relationships
+│   │   ├── relationship_builder.py  Wire entity relationships
+│   │   └── ce_data_builder.py       CE fallback: synthetic B2B from CE customers
+│   ├── examples/                    Sample OAA payload output
 │   └── tests/                       Unit tests
 ├── shared/                          Common library (magento-oaa-shared)
 │   ├── magento_oaa_shared/          OAA builder, permissions, output management
 │   └── tests/                       Unit tests
-├── deployment/
+├── deployment/                      (dev branch only)
 │   ├── test/
-│   │   ├── validate-instance.sh     5-stage instance validation
-│   │   ├── run-extraction.sh        Lightweight 50-record B2B extraction
-│   │   └── output/                  Timestamped extraction output (gitignored)
+│   │   ├── validate-instance.sh     5-stage remote instance validation (bash)
+│   │   ├── validate_instance.py     5-stage remote instance validation (Python)
+│   │   ├── run-extraction.sh        50-record B2B extraction (bash)
+│   │   └── run_extraction.py        50-record B2B extraction (Python)
 │   └── ...                          AWS EC2 test environment scripts
 └── README.md
 ```
