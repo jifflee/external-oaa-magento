@@ -21,6 +21,14 @@ GRAPHQL_RESPONSE = {
             "firstname": "John",
             "lastname": "Admin",
         },
+        "legal_address": {
+            "street": ["123 Main St", "Suite 100"],
+            "city": "Austin",
+            "region": {"region_code": "TX"},
+            "postcode": "78701",
+            "country_code": "US",
+            "telephone": "555-0000",
+        },
         "structure": {
             "items": [
                 {
@@ -34,6 +42,7 @@ GRAPHQL_RESPONSE = {
                         "job_title": "CEO",
                         "telephone": "555-0001",
                         "status": "ACTIVE",
+                        "created_at": "2024-01-15 10:30:00",
                         "role": {"id": "MQ==", "name": "Company Administrator"},
                         "team": None,
                     },
@@ -59,6 +68,7 @@ GRAPHQL_RESPONSE = {
                         "job_title": "Senior Developer",
                         "telephone": "555-0002",
                         "status": "ACTIVE",
+                        "created_at": "2024-02-10 09:00:00",
                         "role": {"id": "Mg==", "name": "Default User"},
                         "team": {"id": "MQ==", "name": "Engineering", "structure_id": "Mg=="},
                     },
@@ -74,6 +84,7 @@ GRAPHQL_RESPONSE = {
                         "job_title": "Procurement",
                         "telephone": "555-0003",
                         "status": "INACTIVE",
+                        "created_at": "2024-03-01 14:00:00",
                         "role": {"id": "Mw==", "name": "Purchaser"},
                         "team": None,
                     },
