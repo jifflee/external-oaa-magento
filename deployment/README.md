@@ -315,6 +315,100 @@ aws ec2 start-instances --instance-ids i-028422b8abdd9f6a4 \
 | Products not orderable | Not assigned to website | Added website assignment step |
 | B2B extension unavailable | Requires Adobe Commerce keys | Graceful skip, CE-only |
 
+## On-Prem Instance Validation & Extraction
+
+Scripts in `test/` validate a target Adobe Commerce instance and extract B2B data. Both are standalone bash scripts requiring only `curl` and `jq` — no Python needed.
+
+### Prerequisites
+
+- Network access to the target Magento instance
+- B2B company admin credentials (email + password)
+- Magento admin credentials (username + password)
+- **Bash scripts** (macOS/Linux): `curl` and `jq`
+- **Python scripts** (Windows/macOS/Linux): Python 3.9+ and `requests` (`pip install requests`)
+
+### Credentials
+
+All scripts accept the same env vars (or prompt interactively):
+
+```bash
+export MAGENTO_URL=https://magento.customer.com
+export COMPANY_ADMIN_EMAIL=admin@company.com
+export COMPANY_ADMIN_PASSWORD=secret
+export MAGENTO_ADMIN_USER=admin
+export MAGENTO_ADMIN_PASS=secret
+```
+
+### Step 1: Validate the instance
+
+```bash
+cd deployment/test
+
+# Bash (macOS/Linux)
+./validate-instance.sh
+
+# Python (Windows/macOS/Linux)
+python validate_instance.py
+```
+
+Runs 5 fail-fast stages:
+
+| Stage | What it checks | Fails on |
+|-------|---------------|----------|
+| 1. Connectivity | `GET /rest/V1/store/storeConfigs` returns JSON | Timeout, non-200, invalid JSON |
+| 2. Authentication | Customer token for the B2B company admin | 401, bad credentials |
+| 3. B2B Module | REST `/company/role` + GraphQL `{ company { name } }` | 404, schema error (B2B not installed) |
+| 4. GraphQL Extraction | Full `VezaExtraction` query (same as connector) | GraphQL errors, empty structure |
+| 5. REST Permissions | `GET /rest/V1/company/role` with ACL details | Warns but doesn't fail (supplementary) |
+
+Prints a color-coded summary at the end. All 5 stages must pass before running extraction.
+
+### Step 2: Extract B2B data (50-record sample)
+
+```bash
+# Bash (macOS/Linux)
+./run-extraction.sh
+
+# Python (Windows/macOS/Linux)
+python run_extraction.py
+```
+
+Pulls B2B data directly via curl with a 50-record limit per entity type. Saves each entity as a separate JSON file in a timestamped output folder.
+
+**Output folder:** `deployment/test/output/YYYYMMDD_HHMM_B2B_Extraction/`
+
+| File | Contents |
+|------|----------|
+| `company.json` | Company metadata: id, name, legal_name, email, company_admin |
+| `users.json` | Up to 50 users with email, name, job_title, status, role, team |
+| `teams.json` | Up to 50 teams with id, name, description, hierarchy position |
+| `structure.json` | Up to 50 hierarchy nodes (id → parent_id → type) |
+| `roles.json` | Up to 50 roles (raw REST response with full permission arrays) |
+| `permissions.json` | Derived: per-role allow/deny resource lists |
+| `extraction_metadata.json` | Timestamp, store URL, entity counts, file manifest |
+
+**Example output:**
+
+```
+deployment/test/output/20260312_1430_B2B_Extraction/
+├── company.json               (1 company)
+├── users.json                 (12 users, capped at 50)
+├── teams.json                 (3 teams)
+├── structure.json             (15 hierarchy nodes)
+├── roles.json                 (4 roles with permissions)
+├── permissions.json           (4 roles → allow/deny lists)
+└── extraction_metadata.json   (run metadata)
+```
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `test/validate-instance.sh` | 5-stage instance validation — bash (macOS/Linux) |
+| `test/validate_instance.py` | 5-stage instance validation — Python (cross-platform) |
+| `test/run-extraction.sh` | 50-record B2B extraction — bash (macOS/Linux) |
+| `test/run_extraction.py` | 50-record B2B extraction — Python (cross-platform) |
+
 ## Teardown
 
 ```bash
