@@ -127,6 +127,101 @@ cd shared && pytest tests/
 cd connectors/on-prem-graphql && pytest tests/
 ```
 
+## QA Branch Requirements
+
+This branch (`qa`) is the staging gate between active development (`dev`) and production release (`main`). Nothing reaches `main` without passing through `qa` first.
+
+### What belongs on qa
+
+Only production-ready code ships on qa. This means:
+
+- **GraphQL connector** — the full 7-step extraction pipeline (`connectors/on-prem-graphql/`)
+- **Shared library** — OAA builder, permissions, output manager (`shared/magento_oaa_shared/`)
+- **Unit tests** — all tests that validate the above modules
+- **Configuration templates** — `.env.template` with placeholder values only
+- **Example output** — `oaa_payload_sample.json` with fictional data (`@acmecorp.example.com`)
+- **User-facing docs** — `README.md`, `LICENSE`, `validation.sh`
+- **CI/CD** — `.github/workflows/release.yml`
+
+### What is stripped during dev-to-qa promotion
+
+The following are removed automatically by `scripts/promote.sh dev-to-qa` (defined in `.branch-exclude-qa` on dev):
+
+| Path | Reason |
+|------|--------|
+| `deployment/` | AWS test environment, validation/extraction scripts |
+| `backlog/` | Cloud connectors (not yet production) |
+| `reference/` | Legacy connectors, API docs |
+| `scripts/` | Dev tooling (promote.sh) |
+| `ARCHITECTURE.md`, `CONTRIBUTING.md` | Internal dev documentation |
+| `connectors/on-prem-rest/` | REST connector (fallback, not production) |
+| `connectors/README.md` | Multi-connector overview (only GraphQL ships) |
+| `connectors/on-prem-graphql/extract_ce.py` | CE fallback extraction script |
+| `connectors/on-prem-graphql/CE_VS_B2B.md` | CE vs B2B comparison doc |
+| `connectors/on-prem-graphql/tests/fixtures/` | Test fixture JSON files |
+| `shared/magento_oaa_shared/preflight_checker.py` | Not yet production-ready |
+| `shared/magento_oaa_shared/provider_registry.py` | Not yet production-ready |
+| `shared/magento_oaa_shared/push_helper.py` | Not yet production-ready |
+| `shared/magento_oaa_shared/veza_client.py` | Not yet production-ready |
+| `shared/tests/test_preflight_checker.py` | Tests for stripped module |
+| `shared/tests/test_push_helper.py` | Tests for stripped module |
+| `.branch-exclude-qa`, `.branch-exclude-main` | Exclude rules themselves |
+
+### QA checklist (before promoting qa to main)
+
+Run this checklist before every `qa-to-main` promotion:
+
+**1. No secrets or real credentials**
+- [ ] No hardcoded passwords, API keys, tokens, or JWT strings
+- [ ] `.env.template` uses only placeholder values (`your-password`, `example.com`)
+- [ ] Test files use only mock/fictional credentials (`"secret"`, `@example.com`)
+
+**2. No internal infrastructure references**
+- [ ] No AWS account IDs, instance IDs, S3 bucket names
+- [ ] No SSO URLs, IAM roles, or deployment-specific configuration
+- [ ] No real IP addresses or internal hostnames
+
+**3. No real customer data**
+- [ ] Sample data uses fictional names and `@example.com` domains only
+- [ ] No real email addresses, phone numbers, or company names
+- [ ] `oaa_payload_sample.json` contains only synthetic data
+
+**4. No dev-only files leaked**
+- [ ] None of the paths listed in the stripping table above exist on qa
+- [ ] Verify with: `git ls-files | grep -E '^(deployment/|backlog/|reference/|scripts/|ARCHITECTURE|CONTRIBUTING|\.branch-exclude)'`
+
+**5. README accuracy**
+- [ ] README does not reference files/directories that don't exist on this branch
+- [ ] Repository structure section matches actual tracked files
+- [ ] No instructions pointing to dev-only tools without a "see dev branch" qualifier
+
+**6. Tests pass**
+- [ ] `cd shared && pytest tests/` — all pass
+- [ ] `cd connectors/on-prem-graphql && pytest tests/` — all pass
+
+**7. Version**
+- [ ] `VERSION` file reflects the intended release version
+- [ ] Version bump is intentional (triggers auto-release on main via CI)
+
+### Promoting to main
+
+qa and main are identical in content. The `.branch-exclude-main` file (on dev) is currently empty — nothing additional is stripped during `qa-to-main`. If qa passes the checklist above, it is ready for main.
+
+```bash
+# From dev branch:
+./scripts/promote.sh qa-to-main     # merge qa into main
+./scripts/promote.sh publish         # push main to external repo (triggers release)
+```
+
+### Merge conflict handling
+
+When promoting dev-to-qa, conflicts commonly occur on files that were deleted on qa (by stripping) but modified on dev. Resolution:
+
+1. Accept the dev version (`git add <file>`)
+2. Complete the merge (`git commit --no-edit`)
+3. Re-run the strip for all excluded paths
+4. Commit the strip (`git commit -m "Strip dev-only files from qa"`)
+
 ## License
 
 See [LICENSE](LICENSE).
